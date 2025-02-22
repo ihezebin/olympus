@@ -2,155 +2,236 @@ package httpserver
 
 import "strings"
 
-type OpenAPIUITemplateType string
-
-const (
-	OpenAPIUITemplateSwagger          OpenAPIUITemplateType = "swagger"
-	OpenAPIUITemplateRapiDoc          OpenAPIUITemplateType = "rapidoc"
-	OpenAPIUITemplateStoplightElement OpenAPIUITemplateType = "stoplight"
-	OpenAPIUITemplateRedoc            OpenAPIUITemplateType = "redoc"
+var (
+	SwaggerUI   = &swaggerUIBuilder{}
+	RapidocUI   = &rapidocBuilder{}
+	StoplightUI = &stoplightElementBuilder{}
+	RedocUI     = &redocBuilder{}
 )
 
-var uiTemplates = map[OpenAPIUITemplateType]string{
-	OpenAPIUITemplateSwagger:          swagger,
-	OpenAPIUITemplateRapiDoc:          rapidoc,
-	OpenAPIUITemplateStoplightElement: stoplightElement,
-	OpenAPIUITemplateRedoc:            redoc,
+type OpenAPIUIBuilder interface {
+	HTML(doc string, title string) string
+	Doc() string
 }
 
-func OpenAPIHTMLUI(t OpenAPIUITemplateType, title string, spec string) string {
-	html := uiTemplates[t]
-	html = strings.ReplaceAll(html, "{:title}", title)
-	html = strings.ReplaceAll(html, "{:spec}", spec)
-	return html
+type swaggerUIBuilder struct {
 }
 
-const swagger = `
+func (s *swaggerUIBuilder) HTML(doc string, title string) string {
+	const template = `
 <!DOCTYPE html>
-<html charset="UTF-8">
-<head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <title>{:title} Document [Swagger UI]</title>
-    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css">
-    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
-</head>
-</html>
-<body>
-  <div id="ui"></div>
-  <script>
-    let spec = {:spec};
-    let oauth2RedirectUrl;
-
-    let query = window.location.href.indexOf("?");
-    if (query > 0) {
-        oauth2RedirectUrl = window.location.href.substring(0, query);
-    } else {
-        oauth2RedirectUrl = window.location.href;
-    }
-
-    if (!oauth2RedirectUrl.endsWith("/")) {
-        oauth2RedirectUrl += "/";
-    }
-    oauth2RedirectUrl += "oauth-receiver.html";
-    SwaggerUIBundle({
-        dom_id: '#ui',
-        spec: spec,
-        filter: false,
-        oauth2RedirectUrl: oauth2RedirectUrl,
-    })
-  </script>`
-
-const rapidoc = `
-<!DOCTYPE html>
-<html charset="UTF-8">
+<html lang="en">
   <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
-    <title>{:title} Document [RapiDoc]</title>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/rapidoc/dist/rapidoc-min.min.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="SwaggerUI" />
+    <title>{:title}</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css"
+    />
   </head>
   <style>
-    rapi-doc::part(section-navbar) { /* <<< targets navigation bar */
-      background: linear-gradient(90deg, #3d4e70, #2e3746);
+    * {
+      font-family: Kaiti SC, cursive, sans-serifcursive, sans-serif !important;
     }
   </style>
   <body>
-    <rapi-doc id="thedoc" 
-    theme="dark" 
-    primary-color = "#f54c47"
-    bg-color = "#2e3746"
-    text-color = "#bacdee"
-    default-schema-tab="model" 
-    allow-search="false"
-    allow-advanced-search="true"
-    show-info="true" 
-    show-header="true" 
-    show-components="true" 
-    schema-style="table"
-    show-method-in-nav-bar="as-colored-block" 
-    allow-try="true"
-    allow-authentication="true" 
-    regular-font="Open Sans" 
-    mono-font="Roboto Mono" 
-    font-size="large"
-    schema-description-expanded="true">
-    </rapi-doc>
+    <div id="swagger-ui"></div>
+    <script
+      src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"
+      crossorigin
+    ></script>
     <script>
-      document.addEventListener('DOMContentLoaded', (event) => {
-        let docEl = document.getElementById("thedoc");
-        docEl.loadSpec({:spec});
-      })
+      window.onload = () => {
+        window.ui = SwaggerUIBundle({
+          spec: {:spec},
+          dom_id: "#swagger-ui",
+          filter: false,
+        });
+      };
     </script>
   </body>
-</html>`
+</html>
+`
 
-const stoplightElement = `
-<!doctype html>
+	html := strings.ReplaceAll(template, "{:title}", title)
+	html = strings.ReplaceAll(html, "{:spec}", doc)
+	return html
+}
+
+func (s *swaggerUIBuilder) Doc() string {
+	return "https://swagger.io/docs/open-source-tools/swagger-ui/usage/installation/#unpkg"
+}
+
+type rapidocBuilder struct {
+}
+
+func (r *rapidocBuilder) HTML(doc string, title string) string {
+	const template = `
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{:title} Document [Elements]</title>
-  
+    <meta charset="utf-8" />
+    <!-- Important: rapi-doc uses utf8 characters -->
+    <title>{:title}</title>
+    <script
+      type="module"
+      src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"
+    ></script>
+  </head>
+  <style>
+    * {
+      font-family: Kaiti SC, cursive, sans-serifcursive, sans-serif !important;
+    }
+  </style>
+  <body>
+    <rapi-doc id="thedoc"> </rapi-doc>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", (event) => {
+        let docEl = document.getElementById("thedoc");
+        docEl.setAttribute("text-color", "");
+        docEl.setAttribute("render-style", "read");
+        docEl.setAttribute("show-header", "false");
+        docEl.setAttribute("theme", "light");
+        docEl.setAttribute("bg-color", "#f9f9fa");
+        docEl.setAttribute("nav-bg-color", "#3f4d67");
+        docEl.setAttribute("nav-text-color", "#a9b7d0");
+        docEl.setAttribute("nav-hover-bg-color", "#333f54");
+        docEl.setAttribute("nav-hover-text-color", "#fff");
+        docEl.setAttribute("nav-accent-color", "#f87070");
+        docEl.setAttribute("primary-color", "#5c7096");
+        const spec = {:spec};
+        docEl.loadSpec(spec);
+      });
+    </script>
+  </body>
+</html>
+`
+
+	html := strings.ReplaceAll(template, "{:title}", title)
+	html = strings.ReplaceAll(html, "{:spec}", doc)
+	return html
+}
+
+func (r *rapidocBuilder) Doc() string {
+	return "https://rapidocweb.com/examples.html"
+}
+
+type stoplightElementBuilder struct {
+}
+
+func (s *stoplightElementBuilder) HTML(doc string, title string) string {
+	const template = `
+  <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>{:title} Document</title>
+
     <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@stoplight/elements/styles.min.css"
+    />
   </head>
   <body>
-    <elements-api id="doc" router="hash" />
+    <div class="api-container">
+      <elements-api
+        id="docs"
+        router="hash"
+        layout="responsive"
+        hideSchemas="true"
+      ></elements-api>
+    </div>
   </body>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
 
+    * {
+      font-family: Kaiti SC, cursive, sans-serifcursive, sans-serif !important;
+    }
+    .api-container {
+      flex: 1 0 0;
+      overflow: hidden;
+    }
+  </style>
   <script>
-    (async() => {
-      let doc = document.getElementById("doc");
-      doc.apiDescriptionDocument = {:spec};
-    })()
+    (async () => {
+      const docs = document.getElementById("docs");
+      docs.apiDescriptionDocument = {:spec};
+    })();
   </script>
 </html>`
 
-const redoc = `
-<!DOCTYPE html>
+	html := strings.ReplaceAll(template, "{:title}", title)
+	html = strings.ReplaceAll(html, "{:spec}", doc)
+	return html
+}
+
+func (s *stoplightElementBuilder) Doc() string {
+	return "https://docs.stoplight.io/docs/elements/a71d7fcfefcd6-elements-in-html"
+}
+
+type redocBuilder struct {
+}
+
+func (r *redocBuilder) HTML(doc string, title string) string {
+	const template = `<!DOCTYPE html>
 <html>
   <head>
-    <title>Redoc</title>
+    <title>{:title}</title>
     <!-- needed for adaptive design -->
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
+      rel="stylesheet"
+    />
 
+    <!--
+    Redoc doesn't change outer page styles
+    -->
     <style>
       body {
         margin: 0;
         padding: 0;
       }
+      * {
+        font-family: Kaiti SC, cursive, sans-serifcursive, sans-serif !important;
+      }
     </style>
   </head>
   <body>
     <redoc id="doc"></redoc>
-    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"> </script>
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
     <script>
       (async()=>{
         Redoc.init({:spec}, {}, document.getElementById('doc'))
       })()
     </script>
   </body>
-</html>`
+</html>
+`
+
+	html := strings.ReplaceAll(template, "{:title}", title)
+	html = strings.ReplaceAll(html, "{:spec}", doc)
+	return html
+}
+
+func (r *redocBuilder) Doc() string {
+	return "https://redocly.com/docs/redoc/deployment/html"
+}

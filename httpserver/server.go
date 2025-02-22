@@ -93,7 +93,7 @@ func (s *server) RegisterRoutes(routers ...Routes) {
 	}
 }
 
-func (s *server) RegisterOpenAPIUI(path string, t OpenAPIUITemplateType) error {
+func (s *server) RegisterOpenAPIUI(path string, ui OpenAPIUIBuilder) error {
 	if path == "" {
 		path = "/openapi"
 	}
@@ -107,7 +107,7 @@ func (s *server) RegisterOpenAPIUI(path string, t OpenAPIUITemplateType) error {
 		return errors.Wrap(err, "marshal openapi spec err")
 	}
 	s.engine.GET(path, func(c *gin.Context) {
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(OpenAPIHTMLUI(t, s.options.ServiceName, string(specStr))))
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(ui.HTML(string(specStr), s.options.ServiceName)))
 	})
 
 	return nil

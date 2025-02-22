@@ -96,13 +96,17 @@ func (r *openapiRouter) handle(method string, path string, h handler, options ..
 	// handle route
 	route := r.openapi.Route(method, path)
 	route = mergeOpenAPIOptions(route, options...)
-	route.HasOperationID(strings.ReplaceAll(path, "/", "_"))
+	operationID := strings.ReplaceAll(path, "/", "_")
+	operationID = strings.TrimLeft(operationID, "_")
+	operationID = strings.TrimRight(operationID, "_")
+
+	route.HasOperationID(operationID)
 
 	if requestBody != nil {
 		route.HasRequestModel(*requestBody)
 	}
 
-	//route.HasResponseModel(http.StatusInternalServerError, openapi.ModelOf[Body[EmptyType]]())
+	route.HasResponseModel(http.StatusInternalServerError, openapi.ModelOf[Body[EmptyType]]())
 	if responseBody != nil {
 		route.HasResponseModel(http.StatusOK, *responseBody)
 	}

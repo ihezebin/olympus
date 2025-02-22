@@ -3,12 +3,12 @@ package httpserver
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ihezebin/soup/httpserver/middleware"
 	"github.com/ihezebin/openapi"
+
+	"github.com/ihezebin/soup/httpserver/middleware"
 )
 
 var ctx = context.Background()
@@ -22,7 +22,19 @@ func TestServer(t *testing.T) {
 
 	server.RegisterRoutes(&HelloRouter{})
 
-	err := server.RegisterOpenAPIUI("/stoplight", OpenAPIUITemplateStoplightElement)
+	err := server.RegisterOpenAPIUI("/stoplight", StoplightUI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = server.RegisterOpenAPIUI("/swagger", SwaggerUI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = server.RegisterOpenAPIUI("/redoc", RedocUI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = server.RegisterOpenAPIUI("/rapidoc", RapidocUI)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,18 +72,4 @@ func (h *HelloRouter) Hello(c *gin.Context, req HelloReq) (resp HelloResp, err e
 func (h *HelloRouter) Ping(c *gin.Context, req map[string]interface{}) (resp string, err error) {
 	fmt.Println(req)
 	return "pong", nil
-}
-
-func TestGinBindMap(t *testing.T) {
-	router := gin.New()
-	router.Any("/test", func(c *gin.Context) {
-		var req map[string]interface{}
-		if err := c.ShouldBindQuery(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, req)
-	})
-
-	router.Run(":8123")
 }
