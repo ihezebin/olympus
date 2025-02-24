@@ -52,6 +52,7 @@ func (s *swaggerUIBuilder) HTML(doc string, title string) string {
           spec: {:spec},
           dom_id: "#swagger-ui",
           filter: false,
+          defaultModelsExpandDepth: -1,
         });
       };
     </script>
