@@ -29,14 +29,15 @@ type server struct {
 func NewServer(opts ...ServerOption) *server {
 	serverOptions := mergeServerOptions(opts...)
 
-	engine := gin.New()
-	// 中间件
-	engine.Use(serverOptions.Middlewares...)
 	// 隐藏路由日志
 	if serverOptions.HiddenRoutesLog {
 		gin.DefaultWriter = io.Discard
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	engine := gin.New()
+	// 中间件
+	engine.Use(serverOptions.Middlewares...)
 
 	// 设置服务名称
 	serviceName := "soup httpserver"
