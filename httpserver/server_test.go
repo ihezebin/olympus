@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
+
 	"github.com/ihezebin/soup/httpserver/middleware"
 )
 
@@ -49,7 +50,7 @@ type HelloRouter struct {
 func (h *HelloRouter) RegisterRoutes(router Router) {
 	group := router.Group("/hello")
 	group.POST("/world", NewHandler(h.Hello))
-	group.GET("/ping", NewHandler(h.Ping), WithDeprecated(), WithResponseHeader("Token", openapi.HeaderParam{
+	group.GET("/ping", NewHandler(h.Ping), WithOpenAPIDeprecated(), WithOpenAPIResponseHeader("Token", openapi.HeaderParam{
 		Description: "认证 JWT",
 	}))
 }

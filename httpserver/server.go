@@ -61,7 +61,14 @@ func NewServer(opts ...ServerOption) *server {
 		pprof.Register(engine)
 	}
 
-	openApi := openapi.NewAPI(serviceName)
+	openapiOpts := make([]openapi.APIOpts, 0)
+	if serverOptions.OpenAPInfo != nil {
+		openapiOpts = append(openapiOpts, openapi.WithInfo(*serverOptions.OpenAPInfo))
+	}
+	if serverOptions.OpenAPIServer != nil {
+		openapiOpts = append(openapiOpts, openapi.WithServer(*serverOptions.OpenAPIServer))
+	}
+	openApi := openapi.NewAPI(serviceName, openapiOpts...)
 	openApi.RegisterModel(openapi.ModelOf[Body[any]]())
 
 	server := &server{

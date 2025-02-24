@@ -11,47 +11,14 @@ import (
 type Router interface {
 	Group(...string) Router
 	Use(...gin.HandlerFunc) Router
-	Any(string, handler, ...OpenAPIOption)
-	GET(string, handler, ...OpenAPIOption)
-	POST(string, handler, ...OpenAPIOption)
-	DELETE(string, handler, ...OpenAPIOption)
-	PATCH(string, handler, ...OpenAPIOption)
-	PUT(string, handler, ...OpenAPIOption)
-	OPTIONS(string, handler, ...OpenAPIOption)
-	HEAD(string, handler, ...OpenAPIOption)
-}
-
-type OpenAPIOption func(*openapi.Route)
-
-func WithDescription(description string) OpenAPIOption {
-	return func(route *openapi.Route) {
-		route.HasDescription(description)
-	}
-}
-
-func WithSummary(summary string) OpenAPIOption {
-	return func(route *openapi.Route) {
-		route.HasSummary(summary)
-	}
-}
-
-func WithDeprecated() OpenAPIOption {
-	return func(route *openapi.Route) {
-		route.HasDeprecated(true)
-	}
-}
-
-func WithResponseHeader(name string, param openapi.HeaderParam) OpenAPIOption {
-	return func(route *openapi.Route) {
-		route.HasResponseHeader(http.StatusOK, name, param)
-	}
-}
-
-func mergeOpenAPIOptions(route *openapi.Route, options ...OpenAPIOption) *openapi.Route {
-	for _, option := range options {
-		option(route)
-	}
-	return route
+	Any(string, handlerGenerator, ...OpenAPIOption)
+	GET(string, handlerGenerator, ...OpenAPIOption)
+	POST(string, handlerGenerator, ...OpenAPIOption)
+	DELETE(string, handlerGenerator, ...OpenAPIOption)
+	PATCH(string, handlerGenerator, ...OpenAPIOption)
+	PUT(string, handlerGenerator, ...OpenAPIOption)
+	OPTIONS(string, handlerGenerator, ...OpenAPIOption)
+	HEAD(string, handlerGenerator, ...OpenAPIOption)
 }
 
 type openapiRouter struct {
@@ -84,7 +51,7 @@ func (r *openapiRouter) Use(middleware ...gin.HandlerFunc) Router {
 	return r
 }
 
-func (r *openapiRouter) handle(method string, path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) handle(method string, path string, h handlerGenerator, options ...OpenAPIOption) {
 	requestBody, responseBody, query, params, requestHeader, responseHeader, handlerFunc := h()
 
 	// register gin route
@@ -158,7 +125,7 @@ func (r *openapiRouter) handle(method string, path string, h handler, options ..
 	}
 }
 
-func (r *openapiRouter) Any(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) Any(path string, h handlerGenerator, options ...OpenAPIOption) {
 	anyMethods := []string{
 		http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch,
 		http.MethodHead, http.MethodOptions, http.MethodDelete, http.MethodConnect,
@@ -170,30 +137,30 @@ func (r *openapiRouter) Any(path string, h handler, options ...OpenAPIOption) {
 	}
 }
 
-func (r *openapiRouter) GET(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) GET(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodGet, path, h, options...)
 }
 
-func (r *openapiRouter) POST(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) POST(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodPost, path, h, options...)
 }
 
-func (r *openapiRouter) DELETE(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) DELETE(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodDelete, path, h, options...)
 }
 
-func (r *openapiRouter) PATCH(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) PATCH(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodPatch, path, h, options...)
 }
 
-func (r *openapiRouter) PUT(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) PUT(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodPut, path, h, options...)
 }
 
-func (r *openapiRouter) OPTIONS(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) OPTIONS(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodOptions, path, h, options...)
 }
 
-func (r *openapiRouter) HEAD(path string, h handler, options ...OpenAPIOption) {
+func (r *openapiRouter) HEAD(path string, h handlerGenerator, options ...OpenAPIOption) {
 	r.handle(http.MethodHead, path, h, options...)
 }

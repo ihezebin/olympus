@@ -99,10 +99,10 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 	}
 }
 
-// handler return [requestBody, responseBody, query, params, requestHeader, responseHeader, gin.HandlerFunc]
-type handler func() (*openapi.Model, *openapi.Model, map[string]openapi.QueryParam, map[string]openapi.PathParam, map[string]openapi.HeaderParam, map[string]openapi.HeaderParam, gin.HandlerFunc)
+// handlerGenerator return [requestBody, responseBody, query, params, requestHeader, responseHeader, gin.HandlerFunc]
+type handlerGenerator func() (*openapi.Model, *openapi.Model, map[string]openapi.QueryParam, map[string]openapi.PathParam, map[string]openapi.HeaderParam, map[string]openapi.HeaderParam, gin.HandlerFunc)
 
-func NewHandler[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT]) handler {
+func NewHandler[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT]) handlerGenerator {
 	return func() (*openapi.Model, *openapi.Model, map[string]openapi.QueryParam, map[string]openapi.PathParam, map[string]openapi.HeaderParam, map[string]openapi.HeaderParam, gin.HandlerFunc) {
 		responseBodyModel := openapi.ModelOf[Body[ResponseT]]()
 

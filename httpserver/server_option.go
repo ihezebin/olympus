@@ -1,6 +1,9 @@
 package httpserver
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/gin-gonic/gin"
+)
 
 type ServerOptions struct {
 	Port            uint              `json:"port" yaml:"port" toml:"port"`
@@ -10,6 +13,8 @@ type ServerOptions struct {
 	HiddenRoutesLog bool              `json:"hidden_routes_log" yaml:"hidden_routes_log" toml:"hidden_routes_log"`
 	Metrics         bool              `json:"metrics" yaml:"metrics" toml:"metrics"`
 	Pprof           bool              `json:"pprof" yaml:"pprof" toml:"pprof"`
+	OpenAPInfo      *openapi3.Info    `json:"openap_info" yaml:"openap_info" toml:"openap_info"`
+	OpenAPIServer   *openapi3.Server  `json:"openap_server" yaml:"openap_server" toml:"openap_server"`
 }
 
 type ServerOption func(*ServerOptions)
@@ -67,5 +72,17 @@ func WithServiceName(name string) ServerOption {
 func WithHiddenRoutesLog() ServerOption {
 	return func(o *ServerOptions) {
 		o.HiddenRoutesLog = true
+	}
+}
+
+func WithOpenAPInfo(info openapi3.Info) ServerOption {
+	return func(o *ServerOptions) {
+		o.OpenAPInfo = &info
+	}
+}
+
+func WithOpenAPIServer(server openapi3.Server) ServerOption {
+	return func(o *ServerOptions) {
+		o.OpenAPIServer = &server
 	}
 }

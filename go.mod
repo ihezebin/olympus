@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/pprof v1.5.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.12.0
-	github.com/ihezebin/openapi v1.0.4
+	github.com/ihezebin/openapi v1.0.5
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/minio/minio-go/v7 v7.0.70
 	github.com/mitchellh/mapstructure v1.5.0
@@ -28,7 +28,7 @@ require (
 )
 
 require (
-	github.com/getkin/kin-openapi v0.124.0 // indirect
+	github.com/getkin/kin-openapi v0.124.0
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/invopop/yaml v0.3.1 // indirect
