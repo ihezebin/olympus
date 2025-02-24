@@ -8,6 +8,8 @@ type ServerOptions struct {
 	Middlewares     []gin.HandlerFunc `json:"middlewares" yaml:"middlewares" toml:"middlewares"`
 	ServiceName     string            `json:"service_name" yaml:"service_name" toml:"service_name"`
 	HiddenRoutesLog bool              `json:"hidden_routes_log" yaml:"hidden_routes_log" toml:"hidden_routes_log"`
+	Metrics         bool              `json:"metrics" yaml:"metrics" toml:"metrics"`
+	Pprof           bool              `json:"pprof" yaml:"pprof" toml:"pprof"`
 }
 
 type ServerOption func(*ServerOptions)
@@ -37,6 +39,18 @@ func WithDaemon(daemon bool) ServerOption {
 func WithMiddlewares(middlewares ...gin.HandlerFunc) ServerOption {
 	return func(o *ServerOptions) {
 		o.Middlewares = middlewares
+	}
+}
+
+func WithMetrics() ServerOption {
+	return func(o *ServerOptions) {
+		o.Metrics = true
+	}
+}
+
+func WithPprof() ServerOption {
+	return func(o *ServerOptions) {
+		o.Pprof = true
 	}
 }
 

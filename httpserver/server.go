@@ -10,9 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ihezebin/soup/logger"
 )
@@ -50,6 +52,14 @@ func NewServer(opts ...ServerOption) *server {
 	engine.GET("/health", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
+
+	if serverOptions.Metrics {
+		engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	}
+
+	if serverOptions.Pprof {
+		pprof.Register(engine)
+	}
 
 	openApi := openapi.NewAPI(serviceName)
 	openApi.RegisterModel(openapi.ModelOf[Body[any]]())
