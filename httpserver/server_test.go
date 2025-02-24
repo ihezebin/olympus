@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
-
 	"github.com/ihezebin/soup/httpserver/middleware"
 )
 
@@ -65,8 +64,8 @@ type HelloResp struct {
 	Message string `json:"message"`
 }
 
-func (h *HelloRouter) Hello(c *gin.Context, req HelloReq) (resp HelloResp, err error) {
-	return HelloResp{Message: req.Content}, nil
+func (h *HelloRouter) Hello(c *gin.Context, req *HelloReq) (resp *HelloResp, err error) {
+	return &HelloResp{Message: req.Content}, nil
 }
 
 func (h *HelloRouter) Ping(c *gin.Context, req map[string]interface{}) (resp string, err error) {

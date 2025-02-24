@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ihezebin/soup/logger"
 	"github.com/ihezebin/openapi"
 	"github.com/pkg/errors"
+
+	"github.com/ihezebin/soup/logger"
 )
 
 type Handler[RequestT any, ResponseT any] func(c *gin.Context, req RequestT) (resp ResponseT, err error)
@@ -104,9 +105,14 @@ type handler func() (*openapi.Model, *openapi.Model, map[string]openapi.QueryPar
 func NewHandler[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT]) handler {
 	return func() (*openapi.Model, *openapi.Model, map[string]openapi.QueryParam, map[string]openapi.PathParam, map[string]openapi.HeaderParam, map[string]openapi.HeaderParam, gin.HandlerFunc) {
 		responseBodyModel := openapi.ModelOf[Body[ResponseT]]()
-		var request RequestT
 
-		requestType := reflect.TypeOf(request)
+		request := new(RequestT)
+		requestType := reflect.TypeOf(request).Elem()
+
+		for requestType.Kind() == reflect.Ptr {
+			requestType = requestType.Elem()
+		}
+
 		//  RequestT 必须是结构体或者 map
 		if requestType.Kind() != reflect.Struct && requestType.Kind() != reflect.Map {
 			err := fmt.Errorf("request type must be struct or map, but got %T", request)
@@ -116,7 +122,7 @@ func NewHandler[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT
 		isRequestStruct := requestType.Kind() == reflect.Struct
 		ginHandleFunc := newGinHandlerFunc(handler, isRequestStruct)
 		if requestType.Kind() == reflect.Map {
-			requestBodyModel := openapi.ModelOf[RequestT]()
+			requestBodyModel := openapi.ModelFromType(requestType)
 			return &requestBodyModel, &responseBodyModel, nil, nil, nil, nil, ginHandleFunc
 		}
 

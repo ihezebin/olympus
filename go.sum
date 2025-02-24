@@ -320,6 +320,8 @@ github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ihezebin/openapi v1.0.3 h1:pe6aiNeDRpZerVh9cO4YhDhwsqdk9I3CSnVnqkBM6cY=
 github.com/ihezebin/openapi v1.0.3/go.mod h1:XYYr1Iu7Ayt70XhcXvNRZPoieE4uAJmqkq27FRSVFiI=
+github.com/ihezebin/openapi v1.0.4 h1:/fCPyZFaDCIncpAvbrZOglBwlqLrOHmXVDSfk66JZa0=
+github.com/ihezebin/openapi v1.0.4/go.mod h1:XYYr1Iu7Ayt70XhcXvNRZPoieE4uAJmqkq27FRSVFiI=
 github.com/invopop/yaml v0.3.1 h1:f0+ZpmhfBSS4MhG+4HYseMdJhoeeopbSKbq5Rpeelso=
 github.com/invopop/yaml v0.3.1/go.mod h1:PMOp3nn4/12yEZUFfmOuNHJsZToEEOwoWsT+D81KkeA=
 github.com/jawher/mow.cli v1.0.4/go.mod h1:5hQj2V8g+qYmLUVWqu4Wuja1pI57M83EChYLVZ0sMKk=
