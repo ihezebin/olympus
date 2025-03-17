@@ -51,12 +51,11 @@ func newZapLogger(opt *Options) *zapLogger {
 		core = newZapServiceHook(core, opt.ServiceName)
 	}
 
+	core = zapcore.NewTee(core)
 	logger := zap.New(core,
 		zap.AddStacktrace(zapcore.ErrorLevel),    // 添加错误堆栈
 		zap.ErrorOutput(zapcore.Lock(os.Stderr)), // 添加错误输出
 	)
-
-	zapcore.NewTee()
 
 	// 确保 Sync 被调用
 	defer func() {
@@ -87,6 +86,16 @@ func levelToZapLevel(level Level) zapcore.Level {
 	}
 }
 
+func (l *zapLogger) withContext(ctx context.Context) *zap.Logger {
+	fields := make([]zap.Field, 0)
+	if traceID := ctx.Value("trace_id"); traceID != nil {
+		fields = append(fields, zap.Any("trace_id", traceID))
+
+	}
+	l.Logger = l.Logger.With(fields...)
+	return l.Logger
+}
+
 func (l *zapLogger) WithError(err error) Logger {
 	newLogger := l.Logger.With(zap.Error(err))
 	return &zapLogger{Logger: newLogger}
@@ -107,121 +116,121 @@ func (l *zapLogger) WithFields(fields map[string]interface{}) Logger {
 }
 
 func (l *zapLogger) Log(ctx context.Context, level Level, args ...interface{}) {
-	l.Logger.Log(levelToZapLevel(level), fmt.Sprint(args...))
+	l.withContext(ctx).Log(levelToZapLevel(level), fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Trace(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprint(args...))
+	l.withContext(ctx).Debug(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Debug(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprint(args...))
+	l.withContext(ctx).Debug(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Info(ctx context.Context, args ...interface{}) {
-	l.Logger.Info(fmt.Sprint(args...))
+	l.withContext(ctx).Info(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Warn(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprint(args...))
+	l.withContext(ctx).Warn(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Warning(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprint(args...))
+	l.withContext(ctx).Warn(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Print(ctx context.Context, args ...interface{}) {
-	l.Logger.Info(fmt.Sprint(args...))
+	l.withContext(ctx).Info(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Error(ctx context.Context, args ...interface{}) {
-	l.Logger.Error(fmt.Sprint(args...))
+	l.withContext(ctx).Error(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Panic(ctx context.Context, args ...interface{}) {
-	l.Logger.Panic(fmt.Sprint(args...))
+	l.withContext(ctx).Panic(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Fatal(ctx context.Context, args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprint(args...))
+	l.withContext(ctx).Fatal(fmt.Sprint(args...))
 }
 
 func (l *zapLogger) Logf(ctx context.Context, level Level, format string, args ...interface{}) {
-	l.Logger.Log(levelToZapLevel(level), fmt.Sprintf(format, args...))
+	l.withContext(ctx).Log(levelToZapLevel(level), fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Tracef(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Debug(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Debugf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Debug(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Infof(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Info(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Info(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Warningf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Printf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Info(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Info(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Errorf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Error(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Error(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Panicf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Panic(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Panic(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Fatalf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprintf(format, args...))
+	l.withContext(ctx).Fatal(fmt.Sprintf(format, args...))
 }
 
 func (l *zapLogger) Logln(ctx context.Context, level Level, args ...interface{}) {
-	l.Logger.Log(levelToZapLevel(level), fmt.Sprintln(args...))
+	l.withContext(ctx).Log(levelToZapLevel(level), fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Traceln(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprintln(args...))
+	l.withContext(ctx).Debug(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Debugln(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprintln(args...))
+	l.withContext(ctx).Debug(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Infoln(ctx context.Context, args ...interface{}) {
-	l.Logger.Info(fmt.Sprintln(args...))
+	l.withContext(ctx).Info(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Warnln(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprintln(args...))
+	l.withContext(ctx).Warn(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Warningln(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn(fmt.Sprintln(args...))
+	l.withContext(ctx).Warn(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Println(ctx context.Context, args ...interface{}) {
-	l.Logger.Info(fmt.Sprintln(args...))
+	l.withContext(ctx).Info(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Errorln(ctx context.Context, args ...interface{}) {
-	l.Logger.Error(fmt.Sprintln(args...))
+	l.withContext(ctx).Error(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Panicln(ctx context.Context, args ...interface{}) {
-	l.Logger.Panic(fmt.Sprintln(args...))
+	l.withContext(ctx).Panic(fmt.Sprintln(args...))
 }
 
 func (l *zapLogger) Fatalln(ctx context.Context, args ...interface{}) {
-	l.Logger.Fatal(fmt.Sprintln(args...))
+	l.withContext(ctx).Fatal(fmt.Sprintln(args...))
 }

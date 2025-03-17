@@ -83,7 +83,7 @@ func (l *zerologLogger) WithFields(fields map[string]interface{}) Logger {
 }
 
 func (l *zerologLogger) Log(ctx context.Context, level Level, args ...interface{}) {
-	l.Logger.Log().Str(FieldKeyLevel, level.String()).Timestamp().Msg(fmt.Sprint(args...))
+	l.Logger.Log().Str(FieldKeyLevel, level.String()).Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
 }
 
 func (l *zerologLogger) Trace(ctx context.Context, args ...interface{}) {

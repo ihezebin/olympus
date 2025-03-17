@@ -60,11 +60,14 @@ func newZapServiceHook(core zapcore.Core, serviceName string) *zapServiceHook {
 }
 
 func (h *zapServiceHook) With(fields []zapcore.Field) zapcore.Core {
-	return h
+	return h.core.With(fields)
 }
 
 func (h *zapServiceHook) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	return ce.AddCore(entry, h)
+	if h.Enabled(entry.Level) {
+		return ce.AddCore(entry, h)
+	}
+	return ce
 }
 
 func (h *zapServiceHook) Write(ent zapcore.Entry, fields []zapcore.Field) error {

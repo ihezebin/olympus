@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -39,6 +40,22 @@ func newLogrusLogger(opt *Options) *logrusLogger {
 
 	if opt.ServiceName != "" {
 		logger.AddHook(newLogrusServiceHook(opt.ServiceName))
+	}
+
+	if opt.LocalFsConfig.Path != "" {
+		hook, err := newLogrusLocalFsHook(opt.LocalFsConfig)
+		if err != nil {
+			panic(fmt.Sprintf("new logrus local fs hook error: %s", err))
+		}
+		logger.AddHook(hook)
+	}
+
+	if opt.RotateConfig.Path != "" {
+		hook, err := newLogrusRotateHook(opt.RotateConfig)
+		if err != nil {
+			panic(fmt.Sprintf("new logrus rotate hook error: %s", err))
+		}
+		logger.AddHook(hook)
 	}
 
 	return &logrusLogger{

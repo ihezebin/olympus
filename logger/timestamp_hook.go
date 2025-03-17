@@ -46,11 +46,14 @@ func newZapTimestampHook(core zapcore.Core) zapcore.Core {
 }
 
 func (h *zapTimestampHook) With(fields []zapcore.Field) zapcore.Core {
-	return h
+	return h.core.With(fields)
 }
 
 func (h *zapTimestampHook) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	return ce.AddCore(entry, h)
+	if h.Enabled(entry.Level) {
+		return ce.AddCore(entry, h)
+	}
+	return ce
 }
 
 func (h *zapTimestampHook) Write(ent zapcore.Entry, fields []zapcore.Field) error {

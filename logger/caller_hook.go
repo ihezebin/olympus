@@ -48,11 +48,14 @@ func newZapCallerHook(core zapcore.Core, skipFrameCount int) *zapCallerHook {
 }
 
 func (h *zapCallerHook) With(fields []zapcore.Field) zapcore.Core {
-	return h
+	return h.core.With(fields)
 }
 
 func (h *zapCallerHook) Check(entry zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-	return ce.AddCore(entry, h)
+	if h.Enabled(entry.Level) {
+		return ce.AddCore(entry, h)
+	}
+	return ce
 }
 
 func (h *zapCallerHook) Write(ent zapcore.Entry, fields []zapcore.Field) error {

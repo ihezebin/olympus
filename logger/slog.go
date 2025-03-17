@@ -116,31 +116,31 @@ func (l *slogLogger) Log(ctx context.Context, level Level, args ...interface{}) 
 }
 
 func (l *slogLogger) Trace(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprint(args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Debug(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug(fmt.Sprint(args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Info(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprint(args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Warn(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprint(args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Warning(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprint(args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Print(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprint(args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Error(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Error(fmt.Sprint(args...))
+	l.withTimestamp().Logger.ErrorContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Panic(ctx context.Context, args ...interface{}) {
@@ -160,31 +160,31 @@ func (l *slogLogger) Logf(ctx context.Context, level Level, format string, args 
 }
 
 func (l *slogLogger) Tracef(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Debug(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Debugf(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Debug(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Infof(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Warningf(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Printf(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Errorf(ctx context.Context, format string, args ...interface{}) {
-	l.withTimestamp().Logger.Error(fmt.Sprintf(format, args...))
+	l.withTimestamp().Logger.ErrorContext(ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *slogLogger) Panicf(ctx context.Context, format string, args ...interface{}) {
@@ -204,31 +204,31 @@ func (l *slogLogger) Logln(ctx context.Context, level Level, args ...interface{}
 }
 
 func (l *slogLogger) Traceln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Debug(fmt.Sprint(args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Debugln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Debug(fmt.Sprint(args...))
+	l.withTimestamp().Logger.DebugContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Infoln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprint(args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Warnln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprint(args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Warningln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Warn(fmt.Sprint(args...))
+	l.withTimestamp().Logger.WarnContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Println(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Info(fmt.Sprint(args...))
+	l.withTimestamp().Logger.InfoContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Errorln(ctx context.Context, args ...interface{}) {
-	l.withTimestamp().Logger.Error(fmt.Sprint(args...))
+	l.withTimestamp().Logger.ErrorContext(ctx, fmt.Sprint(args...))
 }
 
 func (l *slogLogger) Panicln(ctx context.Context, args ...interface{}) {

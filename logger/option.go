@@ -16,21 +16,35 @@ const (
 )
 
 type Options struct {
-	Type         LoggerType
-	Level        Level
-	ServiceName  string
-	LocalFsPath  string
-	RotateConfig RotateConfig
-	Caller       bool
-	CallerSkip   int
-	Timestamp    bool
-	Output       io.Writer
+	Type          LoggerType
+	Level         Level
+	ServiceName   string
+	LocalFsConfig LocalFsConfig
+	RotateConfig  RotateConfig
+	Caller        bool
+	CallerSkip    int
+	Timestamp     bool
+	Output        io.Writer
+}
+
+type LocalFsConfig struct {
+	Path string
+	// ErrorFileLevel default is ErrorLevel
+	ErrorFileLevel Level
+	// ErrorFileExt default is add ".err", if you use 'a/b/c.log', the error file is 'a/b/c.err.log'
+	ErrorFileExt string
 }
 
 type RotateConfig struct {
-	Path       string
-	RotateTime time.Duration
-	ExpireTime time.Duration
+	Path               string
+	MaxSizeKB          int
+	MaxRetainFileCount int
+	MaxAge             time.Duration
+	Compress           bool
+	// ErrorFileLevel default is ErrorLevel
+	ErrorFileLevel Level
+	// ErrorFileExt default is add ".err", if you use 'a/b/c.log', the error file is 'a/b/c.err.log'
+	ErrorFileExt string
 }
 
 func defaultOptions() *Options {
@@ -64,12 +78,29 @@ func WithLoggerType(t LoggerType) Option {
 	}
 }
 
-func WithLocalFsPath(path string) Option {
+func WithLocalFs(config LocalFsConfig) Option {
+
+	if config.ErrorFileLevel == "" {
+		config.ErrorFileLevel = LevelError
+	}
+
+	if config.ErrorFileExt == "" {
+		config.ErrorFileExt = ".err"
+	}
+
 	return func(o *Options) {
-		o.LocalFsPath = path
+		o.LocalFsConfig = config
 	}
 }
-func WithRotate(path string, config RotateConfig) Option {
+func WithRotate(config RotateConfig) Option {
+	if config.ErrorFileLevel == "" {
+		config.ErrorFileLevel = LevelError
+	}
+
+	if config.ErrorFileExt == "" {
+		config.ErrorFileExt = ".err"
+	}
+
 	return func(o *Options) {
 		o.RotateConfig = config
 	}
