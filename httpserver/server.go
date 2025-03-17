@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/ihezebin/soup/logger"
+	"github.com/ihezebin/olympus/logger"
 )
 
 type server struct {
@@ -40,7 +40,7 @@ func NewServer(opts ...ServerOption) *server {
 	engine.Use(serverOptions.Middlewares...)
 
 	// 设置服务名称
-	serviceName := "soup httpserver"
+	serviceName := "olympus httpserver"
 	if serverOptions.ServiceName != "" {
 		serviceName = serverOptions.ServiceName
 	}

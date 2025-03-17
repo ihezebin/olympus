@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ihezebin/soup/pubsub"
+	"github.com/ihezebin/olympus/pubsub"
 )
 
 type message struct {

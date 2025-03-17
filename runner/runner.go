@@ -7,7 +7,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/ihezebin/soup/logger"
+	"github.com/ihezebin/olympus/logger"
 )
 
 type Runner struct {

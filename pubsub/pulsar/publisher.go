@@ -7,7 +7,7 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/log"
 
-	"github.com/ihezebin/soup/pubsub"
+	"github.com/ihezebin/olympus/pubsub"
 )
 
 type PubOptions struct {

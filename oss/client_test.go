@@ -67,7 +67,7 @@ func TestMinioClient(t *testing.T) {
 
 func TestOSSClient(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClient("oss://xxx:xxx@oss-cn-chengdu.aliyuncs.com/soup-test")
+	client, err := NewClient("oss://xxx:xxx@oss-cn-chengdu.aliyuncs.com/olympus-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestCosClient(t *testing.T) {
 
 func TestKodoClient(t *testing.T) {
 	ctx := context.Background()
-	client, err := NewClient("kodo://xx-xxx-7ARRTVTPV8pr:xxx@z2/soup-test")
+	client, err := NewClient("kodo://xx-xxx-7ARRTVTPV8pr:xxx@z2/olympus-test")
 	if err != nil {
 		t.Fatal(err)
 	}

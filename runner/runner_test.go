@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ihezebin/soup/httpserver"
+	"github.com/ihezebin/olympus/httpserver"
 )
 
 /*

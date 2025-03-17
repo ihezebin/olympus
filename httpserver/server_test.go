@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
 
-	"github.com/ihezebin/soup/httpserver/middleware"
+	"github.com/ihezebin/olympus/httpserver/middleware"
 )
 
 var ctx = context.Background()

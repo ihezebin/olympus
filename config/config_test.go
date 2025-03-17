@@ -18,7 +18,7 @@ func TestConfigFile(t *testing.T) {
 
 func TestConfigReader(t *testing.T) {
 	data := `{
-  "name": "soup",
+  "name": "olympus",
   "version": "1.0.0"
 }`
 	config := NewWithReader(strings.NewReader(data))

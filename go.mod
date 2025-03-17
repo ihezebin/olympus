@@ -1,4 +1,4 @@
-module github.com/ihezebin/soup
+module github.com/ihezebin/olympus
 
 go 1.22.2
 
@@ -24,7 +24,15 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms v1.0.889
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.47
 	github.com/xuri/excelize/v2 v2.8.1
+	go.opentelemetry.io/otel v1.35.0
+	go.opentelemetry.io/otel/sdk v1.35.0
+	go.opentelemetry.io/otel/sdk/log v0.11.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+)
+
+require (
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	go.opentelemetry.io/contrib/bridges/otellogrus v0.10.0 // indirect
 )
 
 require (
@@ -71,6 +79,8 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
@@ -110,6 +120,7 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/rs/xid v1.5.0 // indirect
+	github.com/rs/zerolog v1.33.0
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
@@ -123,8 +134,14 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xuri/efp v0.0.0-20231025114914-d1ff6096ae53 // indirect
 	github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/contrib/bridges/otelzap v0.10.0
+	go.opentelemetry.io/otel/log v0.11.0 // indirect
+	go.opentelemetry.io/otel/metric v1.35.0 // indirect
+	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.0
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
@@ -132,7 +149,7 @@ require (
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

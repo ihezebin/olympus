@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/ihezebin/soup/pubsub"
+	"github.com/ihezebin/olympus/pubsub"
 )
 
 type PubOptions struct {

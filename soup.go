@@ -1,10 +1,10 @@
-package soup
+package olympus
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/ihezebin/soup/util"
+	"github.com/ihezebin/olympus/util"
 )
 
 func init() {

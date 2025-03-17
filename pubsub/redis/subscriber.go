@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/ihezebin/soup/logger"
-	"github.com/ihezebin/soup/pubsub"
+	"github.com/ihezebin/olympus/logger"
+	"github.com/ihezebin/olympus/pubsub"
 )
 
 type SubOptions struct {

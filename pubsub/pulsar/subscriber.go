@@ -9,8 +9,8 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar/log"
 	"github.com/pkg/errors"
 
-	"github.com/ihezebin/soup/logger"
-	"github.com/ihezebin/soup/pubsub"
+	"github.com/ihezebin/olympus/logger"
+	"github.com/ihezebin/olympus/pubsub"
 )
 
 type SubOptions struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ihezebin/soup/sms/aliyun"
-	"github.com/ihezebin/soup/sms/tencent"
+	"github.com/ihezebin/olympus/sms/aliyun"
+	"github.com/ihezebin/olympus/sms/tencent"
 )
 
 func TestTencentSms(t *testing.T) {
