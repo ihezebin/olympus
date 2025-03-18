@@ -35,6 +35,11 @@ func newZerologLogger(logger zerolog.Logger, opt *Options) *zerologLogger {
 		logger = logger.Hook(newZerologTimestampHook())
 	}
 
+	if opt.LocalFsConfig.Path != "" {
+		hook := newZerologLocalFsHook(logger, opt, opt.LocalFsConfig)
+		logger = logger.Hook(hook)
+	}
+
 	if opt.RotateConfig.Path != "" {
 		hook, err := newZerologRotateHook(logger, opt, opt.RotateConfig)
 		if err != nil {

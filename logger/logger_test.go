@@ -148,15 +148,33 @@ func TestLoggerWithLocalFs(t *testing.T) {
 		t.Fatal(err)
 	}
 	logrusPath := filepath.Join(dir, "log/logrus.log")
-	// zerologPath := filepath.Join(dir, "log/zerolog.log")
-	// slogPath := filepath.Join(dir, "log/slog.log")
-	// zapPath := filepath.Join(dir, "log/zap.log")
+	zerologPath := filepath.Join(dir, "log/zerolog.log")
+	slogPath := filepath.Join(dir, "log/slog.log")
+	zapPath := filepath.Join(dir, "log/zap.log")
 
 	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"), WithLocalFs(LocalFsConfig{
 		Path: logrusPath,
 	}))
-	logrusLogger.Info(ctx, "hello")
+	logrusLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
 	logrusLogger.WithError(errors.New("test error")).Error(ctx, "hello")
+
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"), WithLocalFs(LocalFsConfig{
+		Path: zerologPath,
+	}))
+	zerologLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+	zerologLogger.WithError(errors.New("test error")).Error(ctx, "hello")
+
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"), WithLocalFs(LocalFsConfig{
+		Path: slogPath,
+	}))
+	slogLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+	slogLogger.WithError(errors.New("test error")).Error(ctx, "hello")
+
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"), WithLocalFs(LocalFsConfig{
+		Path: zapPath,
+	}))
+	zapLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+	zapLogger.WithError(errors.New("test error")).Error(ctx, "hello")
 }
 
 func TestLogrusLoggerWithRotate(t *testing.T) {

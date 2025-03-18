@@ -43,11 +43,7 @@ func newLogrusLogger(opt *Options) *logrusLogger {
 	}
 
 	if opt.LocalFsConfig.Path != "" {
-		hook, err := newLogrusLocalFsHook(opt.LocalFsConfig)
-		if err != nil {
-			panic(fmt.Sprintf("new logrus local fs hook error: %s", err))
-		}
-		logger.AddHook(hook)
+		logger.AddHook(newLogrusLocalFsHook(opt.LocalFsConfig))
 	}
 
 	if opt.RotateConfig.Path != "" {
@@ -109,117 +105,117 @@ func (l *logrusLogger) Log(ctx context.Context, level Level, args ...interface{}
 }
 
 func (l *logrusLogger) Trace(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Trace(args...)
+	l.Log(ctx, LevelTrace, args...)
 }
 
 func (l *logrusLogger) Debug(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Debug(args...)
+	l.Log(ctx, LevelDebug, args...)
 }
 
 func (l *logrusLogger) Info(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Info(args...)
+	l.Log(ctx, LevelInfo, args...)
 }
 
 func (l *logrusLogger) Warn(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warn(args...)
+	l.Log(ctx, LevelWarn, args...)
 }
 
 func (l *logrusLogger) Warning(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warning(args...)
+	l.Log(ctx, LevelWarn, args...)
 }
 
 func (l *logrusLogger) Print(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Print(args...)
+	l.Log(ctx, LevelInfo, args...)
 }
 
 func (l *logrusLogger) Error(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Error(args...)
+	l.Log(ctx, LevelError, args...)
 }
 
 func (l *logrusLogger) Panic(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Panic(args...)
+	l.Log(ctx, LevelPanic, args...)
 }
 
 func (l *logrusLogger) Fatal(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Fatal(args...)
+	l.Log(ctx, LevelFatal, args...)
 }
 
 func (l *logrusLogger) Logf(ctx context.Context, level Level, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Logf(levelToLogrusLevel(level), format, args...)
+	l.Log(ctx, level, fmt.Sprintf(format, args...))
 }
 
 func (l *logrusLogger) Tracef(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Tracef(format, args...)
+	l.Logf(ctx, LevelTrace, format, args...)
 }
 
 func (l *logrusLogger) Debugf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Debugf(format, args...)
+	l.Logf(ctx, LevelDebug, format, args...)
 }
 
 func (l *logrusLogger) Infof(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Infof(format, args...)
+	l.Logf(ctx, LevelInfo, format, args...)
 }
 
 func (l *logrusLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warnf(format, args...)
+	l.Logf(ctx, LevelWarn, format, args...)
 }
 
 func (l *logrusLogger) Warningf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warningf(format, args...)
+	l.Logf(ctx, LevelWarn, format, args...)
 }
 
 func (l *logrusLogger) Printf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Printf(format, args...)
+	l.Logf(ctx, LevelInfo, format, args...)
 }
 
 func (l *logrusLogger) Errorf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Errorf(format, args...)
+	l.Logf(ctx, LevelError, format, args...)
 }
 
 func (l *logrusLogger) Panicf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Panicf(format, args...)
+	l.Logf(ctx, LevelPanic, format, args...)
 }
 
 func (l *logrusLogger) Fatalf(ctx context.Context, format string, args ...interface{}) {
-	l.Entry.WithContext(ctx).Fatalf(format, args...)
+	l.Logf(ctx, LevelFatal, format, args...)
 }
 
 func (l *logrusLogger) Logln(ctx context.Context, level Level, args ...interface{}) {
-	l.Entry.WithContext(ctx).Logln(levelToLogrusLevel(level), args...)
+	l.Log(ctx, level, fmt.Sprintln(args...))
 }
 
 func (l *logrusLogger) Traceln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Traceln(args...)
+	l.Logln(ctx, LevelTrace, args...)
 }
 
 func (l *logrusLogger) Debugln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Debugln(args...)
+	l.Log(ctx, LevelDebug, args...)
 }
 
 func (l *logrusLogger) Infoln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Infoln(args...)
+	l.Logln(ctx, LevelInfo, args...)
 }
 
 func (l *logrusLogger) Warnln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warnln(args...)
+	l.Logln(ctx, LevelWarn, args...)
 }
 
 func (l *logrusLogger) Warningln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Warningln(args...)
+	l.Logln(ctx, LevelWarn, args...)
 }
 
 func (l *logrusLogger) Println(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Println(args...)
+	l.Logln(ctx, LevelInfo, args...)
 }
 
 func (l *logrusLogger) Errorln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Errorln(args...)
+	l.Logln(ctx, LevelError, args...)
 }
 
 func (l *logrusLogger) Panicln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Panicln(args...)
+	l.Logln(ctx, LevelPanic, args...)
 }
 
 func (l *logrusLogger) Fatalln(ctx context.Context, args ...interface{}) {
-	l.Entry.WithContext(ctx).Fatalln(args...)
+	l.Logln(ctx, LevelFatal, args...)
 }

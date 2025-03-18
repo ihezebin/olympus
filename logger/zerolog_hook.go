@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -33,6 +34,40 @@ func newZerologRotateHook(logger zerolog.Logger, opt *Options, config RotateConf
 }
 
 func (h *zerologRotateHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	var logger zerolog.Logger
+	if level >= h.errLevel {
+		logger = h.errLogger
+	} else {
+		logger = h.normalLogger
+	}
+
+	logger.WithLevel(level).Msg(msg)
+}
+
+type zerologLocalFsHook struct {
+	normalLogger, errLogger zerolog.Logger
+	errLevel                zerolog.Level
+}
+
+var _ zerolog.Hook = &zerologLocalFsHook{}
+
+func newZerologLocalFsHook(logger zerolog.Logger, opt *Options, config LocalFsConfig) *zerologLocalFsHook {
+	normalWriter, errWriter, err := newLocalFsWriter(config)
+	if err != nil {
+		panic(fmt.Sprintf("new local fs writer error: %s", err))
+	}
+
+	normalLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(normalWriter)
+	errLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(errWriter)
+
+	return &zerologLocalFsHook{
+		normalLogger: normalLogger,
+		errLogger:    errLogger,
+		errLevel:     levelToZerologLevel(config.ErrorFileLevel),
+	}
+}
+
+func (h *zerologLocalFsHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	var logger zerolog.Logger
 	if level >= h.errLevel {
 		logger = h.errLogger

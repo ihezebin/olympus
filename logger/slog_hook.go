@@ -9,10 +9,11 @@ import (
 )
 
 type slogHook struct {
-	handler                               slog.Handler
-	handlerOpts                           *slog.HandlerOptions
-	opt                                   *Options
-	rotateNormalHandler, rotateErrHandler slog.Handler
+	handler                                 slog.Handler
+	handlerOpts                             *slog.HandlerOptions
+	opt                                     *Options
+	rotateNormalHandler, rotateErrHandler   slog.Handler
+	localFsNormalHandler, localFsErrHandler slog.Handler
 }
 
 var _ slog.Handler = &slogHook{}
@@ -23,6 +24,16 @@ func newSlogHook(handler slog.Handler, handlerOpts *slog.HandlerOptions, opt *Op
 		handler:     handler,
 		handlerOpts: handlerOpts,
 		opt:         opt,
+	}
+
+	if opt.LocalFsConfig.Path != "" {
+		normalWriter, errWriter, err := newLocalFsWriter(opt.LocalFsConfig)
+		if err != nil {
+			panic(fmt.Sprintf("new slog local fs writer error: %s", err))
+		}
+
+		hook.localFsNormalHandler = slog.NewJSONHandler(normalWriter, handlerOpts)
+		hook.localFsErrHandler = slog.NewJSONHandler(errWriter, handlerOpts)
 	}
 
 	if opt.RotateConfig.Path != "" {
@@ -55,6 +66,14 @@ func (h *slogHook) WithAttrs(attrs []slog.Attr) slog.Handler {
 		newHook.rotateErrHandler = h.rotateErrHandler.WithAttrs(attrs)
 	}
 
+	if h.localFsNormalHandler != nil {
+		newHook.localFsNormalHandler = h.localFsNormalHandler.WithAttrs(attrs)
+	}
+
+	if h.localFsErrHandler != nil {
+		newHook.localFsErrHandler = h.localFsErrHandler.WithAttrs(attrs)
+	}
+
 	return newHook
 }
 
@@ -73,6 +92,14 @@ func (h *slogHook) WithGroup(name string) slog.Handler {
 
 	if h.rotateErrHandler != nil {
 		newHook.rotateErrHandler = h.rotateErrHandler.WithGroup(name)
+	}
+
+	if h.localFsNormalHandler != nil {
+		newHook.localFsNormalHandler = h.localFsNormalHandler.WithGroup(name)
+	}
+
+	if h.localFsErrHandler != nil {
+		newHook.localFsErrHandler = h.localFsErrHandler.WithGroup(name)
 	}
 
 	return newHook
@@ -108,6 +135,22 @@ func (h *slogHook) Handle(ctx context.Context, r slog.Record) error {
 			err := handler.Handle(ctx, r)
 			if err != nil {
 				return errors.Wrapf(err, "slog rotate handle error")
+			}
+		}
+	}
+
+	if h.opt.LocalFsConfig.Path != "" {
+		var handler slog.Handler
+		if r.Level >= levelToSlogLevel(h.opt.LocalFsConfig.ErrorFileLevel) {
+			handler = h.localFsErrHandler
+		} else {
+			handler = h.localFsNormalHandler
+		}
+
+		if handler != nil {
+			err := handler.Handle(ctx, r)
+			if err != nil {
+				return errors.Wrapf(err, "slog local fs handle error")
 			}
 		}
 	}

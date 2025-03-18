@@ -9,16 +9,27 @@ import (
 )
 
 type zapHook struct {
-	core                                zapcore.Core
-	opt                                 *Options
-	rotateNormalWriter, rotateErrWriter io.Writer
-	encoder                             zapcore.Encoder
+	core                                  zapcore.Core
+	opt                                   *Options
+	rotateNormalWriter, rotateErrWriter   io.Writer
+	localFsNormalWriter, localFsErrWriter io.Writer
+	encoder                               zapcore.Encoder
 }
 
 var _ zapcore.Core = &zapHook{}
 
 func newZapHook(core zapcore.Core, encoder zapcore.Encoder, opt *Options) *zapHook {
 	hook := &zapHook{core: core, encoder: encoder, opt: opt}
+
+	if opt.LocalFsConfig.Path != "" {
+		normalWriter, errWriter, err := newLocalFsWriter(opt.LocalFsConfig)
+		if err != nil {
+			panic(fmt.Sprintf("new zap local fs writer error: %s", err))
+		}
+		hook.localFsNormalWriter = normalWriter
+		hook.localFsErrWriter = errWriter
+	}
+
 	if opt.RotateConfig.Path != "" {
 		normalWriter, errWriter, err := newRotateWriter(opt.RotateConfig)
 		if err != nil {
@@ -94,6 +105,26 @@ func (h *zapHook) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		_, err = writer.Write(buf.Bytes())
 		if err != nil {
 			return errors.Wrapf(err, "zap rotate write error")
+		}
+	}
+
+	if h.localFsNormalWriter != nil {
+		var writer io.Writer
+		if entry.Level >= levelToZapLevel(h.opt.LocalFsConfig.ErrorFileLevel) {
+			writer = h.localFsErrWriter
+		} else {
+			writer = h.localFsNormalWriter
+		}
+
+		buf, err := h.encoder.EncodeEntry(entry, newFields)
+		if err != nil {
+			return errors.Wrapf(err, "encode error")
+		}
+		defer buf.Free()
+
+		_, err = writer.Write(buf.Bytes())
+		if err != nil {
+			return errors.Wrapf(err, "zap local fs write error")
 		}
 	}
 
