@@ -84,18 +84,24 @@ func levelToLogrusLevel(level Level) logrus.Level {
 }
 
 func (l *logrusLogger) WithError(err error) Logger {
-	l.Entry = l.Entry.WithError(err)
-	return l
+	return &logrusLogger{
+		Logger: l.Logger,
+		Entry:  l.Entry.WithError(err),
+	}
 }
 
 func (l *logrusLogger) WithField(key string, value interface{}) Logger {
-	l.Entry = l.Entry.WithField(key, value)
-	return l
+	return &logrusLogger{
+		Logger: l.Logger,
+		Entry:  l.Entry.WithField(key, value),
+	}
 }
 
 func (l *logrusLogger) WithFields(fields map[string]interface{}) Logger {
-	l.Entry = l.Entry.WithFields(fields)
-	return l
+	return &logrusLogger{
+		Logger: l.Logger,
+		Entry:  l.Entry.WithFields(fields),
+	}
 }
 
 func (l *logrusLogger) Log(ctx context.Context, level Level, args ...interface{}) {

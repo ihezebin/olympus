@@ -1,6 +1,10 @@
 package logger
 
-import "context"
+import (
+	"context"
+
+	"github.com/rs/zerolog"
+)
 
 type Level string
 
@@ -64,6 +68,10 @@ type Logger interface {
 
 var logger Logger = New(WithLoggerType(LoggerTypeZerolog))
 
+func ResetLogger(l Logger) {
+	logger = l
+}
+
 func ResetLoggerWithOptions(opts ...Option) {
 	options := defaultOptions()
 	for _, opt := range opts {
@@ -84,13 +92,13 @@ func New(opts ...Option) Logger {
 	case LoggerTypeLogrus:
 		l = newLogrusLogger(options)
 	case LoggerTypeZerolog:
-		l = newZerologLogger(options)
+		l = newZerologLogger(zerolog.New(options.Output), options)
 	case LoggerTypeZap:
 		l = newZapLogger(options)
 	case LoggerTypeSlog:
 		l = newSlogLogger(options)
 	default:
-		l = newZerologLogger(options)
+		l = newZerologLogger(zerolog.New(options.Output), options)
 	}
 
 	return l

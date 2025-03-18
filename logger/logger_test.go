@@ -24,6 +24,25 @@ func TestLogger(t *testing.T) {
 
 	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
 	zapLogger.Info(ctx, "hello")
+
+}
+
+func TestLoggerError(t *testing.T) {
+	ctx := context.Background()
+
+	err := errors.New("test error")
+
+	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"))
+	logrusLogger.WithError(err).Error(ctx, "hello err")
+
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"))
+	zerologLogger.WithError(err).Error(ctx, "hello err")
+
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"))
+	slogLogger.WithError(err).Error(ctx, "hello err")
+
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
+	zapLogger.WithError(err).Error(ctx, "hello err")
 }
 
 func BenchmarkLogger(b *testing.B) {
@@ -36,7 +55,7 @@ func BenchmarkLogger(b *testing.B) {
 
 	// 测试普通信息日志
 	b.Run("info/plain", func(b *testing.B) {
-		b.Run("logrus", func(b1 *testing.B) {
+		b.Run("logrus", func(b *testing.B) {
 			logrusLogger := New(append(noOutputOpts, WithLoggerType(LoggerTypeLogrus))...)
 			b.ResetTimer()
 			b.ReportAllocs()
@@ -140,7 +159,7 @@ func TestLoggerWithLocalFs(t *testing.T) {
 	logrusLogger.WithError(errors.New("test error")).Error(ctx, "hello")
 }
 
-func TestLoggerWithRotate(t *testing.T) {
+func TestLogrusLoggerWithRotate(t *testing.T) {
 	ctx := context.Background()
 
 	dir, err := os.Getwd()
@@ -158,8 +177,84 @@ func TestLoggerWithRotate(t *testing.T) {
 		ErrorFileLevel:     LevelError,
 		ErrorFileExt:       ".err",
 	}))
+
 	for i := 0; i < 3000; i++ {
-		logrusLogger.Info(ctx, "hello")
-		logrusLogger.WithError(errors.New("test error")).Error(ctx, "hello")
+		logrusLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+		logrusLogger.WithError(errors.New("test error")).Error(ctx, "hello err")
+	}
+}
+
+func TestZerologLoggerWithRotate(t *testing.T) {
+	ctx := context.Background()
+
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zerologPath := filepath.Join(dir, "log_rotate/zerolog.log")
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"), WithRotate(RotateConfig{
+		Path:               zerologPath,
+		MaxSizeKB:          10,
+		MaxRetainFileCount: 3,
+		MaxAge:             60 * time.Second,
+		Compress:           true,
+		ErrorFileLevel:     LevelError,
+		ErrorFileExt:       ".err",
+	}))
+
+	for i := 0; i < 3000; i++ {
+		zerologLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+		zerologLogger.WithError(errors.New("test error")).Error(ctx, "hello err")
+	}
+}
+
+func TestSlogLoggerWithRotate(t *testing.T) {
+	ctx := context.Background()
+
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	slogPath := filepath.Join(dir, "log_rotate/slog.log")
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"), WithRotate(RotateConfig{
+		Path:               slogPath,
+		MaxSizeKB:          10,
+		MaxRetainFileCount: 3,
+		MaxAge:             60 * time.Second,
+		Compress:           true,
+		ErrorFileLevel:     LevelError,
+		ErrorFileExt:       ".err",
+	}))
+
+	for i := 0; i < 3000; i++ {
+		slogLogger.WithField("a", "1").Info(ctx, "hello")
+		slogLogger.WithError(errors.New("test error")).Error(ctx, "hello err")
+	}
+}
+
+func TestZapLoggerWithRotate(t *testing.T) {
+	ctx := context.Background()
+
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zapPath := filepath.Join(dir, "log_rotate/zap.log")
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"), WithRotate(RotateConfig{
+		Path:               zapPath,
+		MaxSizeKB:          10,
+		MaxRetainFileCount: 3,
+		MaxAge:             60 * time.Second,
+		Compress:           true,
+		ErrorFileLevel:     LevelError,
+		ErrorFileExt:       ".err",
+	}))
+
+	for i := 0; i < 3000; i++ {
+		zapLogger.WithField("a", "1").WithField("b", "2").Info(ctx, "hello")
+		zapLogger.WithError(errors.New("test error")).Error(ctx, "hello err")
 	}
 }

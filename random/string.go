@@ -1,9 +1,8 @@
 package random
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"strings"
-	"time"
 )
 
 const (
@@ -26,7 +25,7 @@ func CaptchaString() string {
 func BlendString(length int) string {
 	sb := new(strings.Builder)
 	for i := 0; i < length; i++ {
-		index := rand.Intn(len(CharsetBlend))
+		index := rand.IntN(len(CharsetBlend))
 		sb.WriteByte(CharsetBlend[index])
 	}
 	return sb.String()
@@ -35,7 +34,7 @@ func BlendString(length int) string {
 func DigitString(length int) string {
 	sb := new(strings.Builder)
 	for i := 0; i < length; i++ {
-		index := rand.Intn(len(CharsetDigit))
+		index := rand.IntN(len(CharsetDigit))
 		sb.WriteByte(CharsetDigit[index])
 	}
 	return sb.String()
@@ -44,21 +43,18 @@ func DigitString(length int) string {
 func LetterString(length int) string {
 	sb := new(strings.Builder)
 	for i := 0; i < length; i++ {
-		index := rand.Intn(len(CharsetLetter))
+		index := rand.IntN(len(CharsetLetter))
 		sb.WriteByte(CharsetLetter[index])
 	}
 	return sb.String()
 }
 
 func ZnCnString(length int) string {
-	sb := new(strings.Builder)
+	chars := []rune(CharsetZnCn)
+	var sb strings.Builder
 	for i := 0; i < length; i++ {
-		index := rand.Intn(len(CharsetZnCn))
-		sb.WriteByte(CharsetZnCn[index])
+		index := rand.IntN(len(chars))
+		sb.WriteRune(chars[index])
 	}
 	return sb.String()
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }

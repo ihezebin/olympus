@@ -10,21 +10,18 @@ import (
 
 type zerologLogger struct {
 	Logger zerolog.Logger
+	Opt    *Options
+	Err    error
+	Fields map[string]interface{}
 }
 
 var _ Logger = &zerologLogger{}
 
-func newZerologLogger(opt *Options) *zerologLogger {
-
+func newZerologLogger(logger zerolog.Logger, opt *Options) *zerologLogger {
 	zerolog.MessageFieldName = FieldKeyMsg
 	zerolog.CallerFieldName = FieldKeyCaller
 	zerolog.TimestampFieldName = FieldKeyTime
 	zerolog.TimeFieldFormat = time.DateTime
-	logger := zerolog.New(opt.Output)
-
-	if opt.Caller {
-		logger = logger.With().CallerWithSkipFrameCount(3 + opt.CallerSkip).Logger()
-	}
 
 	if opt.Level != "" {
 		logger = logger.Level(levelToZerologLevel(opt.Level))
@@ -38,8 +35,23 @@ func newZerologLogger(opt *Options) *zerologLogger {
 		logger = logger.Hook(newZerologTimestampHook())
 	}
 
+	if opt.RotateConfig.Path != "" {
+		hook, err := newZerologRotateHook(logger, opt, opt.RotateConfig)
+		if err != nil {
+			panic(fmt.Sprintf("new zerolog rotate hook error: %s", err))
+		}
+		logger = logger.Hook(hook)
+	}
+
+	if opt.Caller {
+		logger = logger.With().CallerWithSkipFrameCount(4 + opt.CallerSkip).Logger()
+	}
+
 	return &zerologLogger{
 		Logger: logger,
+		Opt:    opt,
+		Err:    nil,
+		Fields: make(map[string]interface{}),
 	}
 }
 
@@ -65,45 +77,68 @@ func levelToZerologLevel(level Level) zerolog.Level {
 }
 
 func (l *zerologLogger) WithError(err error) Logger {
-	newLogger := l.Logger.With().Err(err).Logger()
-	return &zerologLogger{Logger: newLogger}
+	return &zerologLogger{
+		Logger: zerolog.New(l.Opt.Output),
+		Opt:    l.Opt,
+		Err:    err,
+		Fields: l.Fields,
+	}
 }
 
 func (l *zerologLogger) WithField(key string, value interface{}) Logger {
-	newLogger := l.Logger.With().Interface(key, value).Logger()
-	return &zerologLogger{Logger: newLogger}
+	return l.WithFields(map[string]interface{}{key: value})
 }
 
 func (l *zerologLogger) WithFields(fields map[string]interface{}) Logger {
-	ctx := l.Logger.With()
-	for k, v := range fields {
-		ctx = ctx.Interface(k, v)
+	allFields := make(map[string]interface{})
+	for k, v := range l.Fields {
+		allFields[k] = v
 	}
-	return &zerologLogger{Logger: ctx.Logger()}
+	for k, v := range fields {
+		allFields[k] = v
+	}
+
+	return &zerologLogger{
+		Logger: zerolog.New(l.Opt.Output),
+		Opt:    l.Opt,
+		Err:    l.Err,
+		Fields: allFields,
+	}
 }
 
 func (l *zerologLogger) Log(ctx context.Context, level Level, args ...interface{}) {
-	l.Logger.Log().Str(FieldKeyLevel, level.String()).Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	loggerCtx := zerolog.New(l.Opt.Output).With()
+	for k, v := range l.Fields {
+		loggerCtx = loggerCtx.Interface(k, v)
+	}
+
+	if l.Err != nil {
+		loggerCtx = loggerCtx.Err(l.Err)
+	}
+
+	logger := loggerCtx.Ctx(ctx).Timestamp().Logger()
+	newLogger := newZerologLogger(logger, l.Opt)
+	newLogger.Logger.WithLevel(levelToZerologLevel(level)).Msg(fmt.Sprint(args...))
 }
 
 func (l *zerologLogger) Trace(ctx context.Context, args ...interface{}) {
-	l.Logger.Trace().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelTrace, args...)
 }
 
 func (l *zerologLogger) Debug(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelDebug, args...)
 }
 
 func (l *zerologLogger) Info(ctx context.Context, args ...interface{}) {
-	l.Logger.Info().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelInfo, args...)
 }
 
 func (l *zerologLogger) Warn(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelWarn, args...)
 }
 
 func (l *zerologLogger) Warning(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelWarn, args...)
 }
 
 func (l *zerologLogger) Print(ctx context.Context, args ...interface{}) {
@@ -111,39 +146,50 @@ func (l *zerologLogger) Print(ctx context.Context, args ...interface{}) {
 }
 
 func (l *zerologLogger) Error(ctx context.Context, args ...interface{}) {
-	l.Logger.Error().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelError, args...)
 }
 
 func (l *zerologLogger) Panic(ctx context.Context, args ...interface{}) {
-	l.Logger.Panic().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelPanic, args...)
 }
 
 func (l *zerologLogger) Fatal(ctx context.Context, args ...interface{}) {
-	l.Logger.Fatal().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Log(ctx, LevelFatal, args...)
 }
 
 func (l *zerologLogger) Logf(ctx context.Context, level Level, format string, args ...interface{}) {
-	l.Logger.Log().Timestamp().Ctx(ctx).Str(FieldKeyLevel, level.String()).Msgf(format, args...)
+	loggerCtx := zerolog.New(l.Opt.Output).With()
+	for k, v := range l.Fields {
+		loggerCtx = loggerCtx.Interface(k, v)
+	}
+
+	if l.Err != nil {
+		loggerCtx = loggerCtx.Err(l.Err)
+	}
+
+	logger := loggerCtx.Ctx(ctx).Timestamp().Logger()
+	newLogger := newZerologLogger(logger, l.Opt)
+	newLogger.Logger.WithLevel(levelToZerologLevel(level)).Msgf(format, args...)
 }
 
 func (l *zerologLogger) Tracef(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Trace().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelTrace, format, args...)
 }
 
 func (l *zerologLogger) Debugf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Debug().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelDebug, format, args...)
 }
 
 func (l *zerologLogger) Infof(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Info().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelInfo, format, args...)
 }
 
 func (l *zerologLogger) Warnf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelWarn, format, args...)
 }
 
 func (l *zerologLogger) Warningf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelWarn, format, args...)
 }
 
 func (l *zerologLogger) Printf(ctx context.Context, format string, args ...interface{}) {
@@ -151,39 +197,50 @@ func (l *zerologLogger) Printf(ctx context.Context, format string, args ...inter
 }
 
 func (l *zerologLogger) Errorf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Error().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelError, format, args...)
 }
 
 func (l *zerologLogger) Panicf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Panic().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelPanic, format, args...)
 }
 
 func (l *zerologLogger) Fatalf(ctx context.Context, format string, args ...interface{}) {
-	l.Logger.Fatal().Timestamp().Ctx(ctx).Msgf(format, args...)
+	l.Logf(ctx, LevelFatal, format, args...)
 }
 
 func (l *zerologLogger) Logln(ctx context.Context, level Level, args ...interface{}) {
-	l.Logger.Log().Timestamp().Ctx(ctx).Str(FieldKeyLevel, level.String()).Msg(fmt.Sprint(args...))
+	loggerCtx := zerolog.New(l.Opt.Output).With()
+	for k, v := range l.Fields {
+		loggerCtx = loggerCtx.Interface(k, v)
+	}
+
+	if l.Err != nil {
+		loggerCtx = loggerCtx.Err(l.Err)
+	}
+
+	logger := loggerCtx.Ctx(ctx).Timestamp().Logger()
+	newLogger := newZerologLogger(logger, l.Opt)
+	newLogger.Logger.WithLevel(levelToZerologLevel(level)).Msg(fmt.Sprintln(args...))
 }
 
 func (l *zerologLogger) Traceln(ctx context.Context, args ...interface{}) {
-	l.Logger.Trace().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelTrace, args...)
 }
 
 func (l *zerologLogger) Debugln(ctx context.Context, args ...interface{}) {
-	l.Logger.Debug().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelDebug, args...)
 }
 
 func (l *zerologLogger) Infoln(ctx context.Context, args ...interface{}) {
-	l.Logger.Info().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelInfo, args...)
 }
 
 func (l *zerologLogger) Warnln(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelWarn, args...)
 }
 
 func (l *zerologLogger) Warningln(ctx context.Context, args ...interface{}) {
-	l.Logger.Warn().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelWarn, args...)
 }
 
 func (l *zerologLogger) Println(ctx context.Context, args ...interface{}) {
@@ -191,13 +248,13 @@ func (l *zerologLogger) Println(ctx context.Context, args ...interface{}) {
 }
 
 func (l *zerologLogger) Errorln(ctx context.Context, args ...interface{}) {
-	l.Logger.Error().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelError, args...)
 }
 
 func (l *zerologLogger) Panicln(ctx context.Context, args ...interface{}) {
-	l.Logger.Panic().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelPanic, args...)
 }
 
 func (l *zerologLogger) Fatalln(ctx context.Context, args ...interface{}) {
-	l.Logger.Fatal().Timestamp().Ctx(ctx).Msg(fmt.Sprint(args...))
+	l.Logln(ctx, LevelFatal, args...)
 }
