@@ -46,7 +46,7 @@ func newWriter(config RotateConfig) (io.Writer, io.Writer, error) {
 
 	rotatelog.BackupFilenameSeparator = "."
 
-	normalWriter := &rotatelog.Logger{
+	normalWriter := &rotatelog.Rotater{
 		Filename:   path,
 		MaxSize:    config.MaxSizeKB,
 		MaxBackups: config.MaxRetainFileCount,
@@ -54,7 +54,7 @@ func newWriter(config RotateConfig) (io.Writer, io.Writer, error) {
 		Compress:   config.Compress,
 		LocalTime:  true,
 	}
-	errWriter := &rotatelog.Logger{
+	errWriter := &rotatelog.Rotater{
 		Filename:   errPath,
 		MaxSize:    config.MaxSizeKB,
 		MaxBackups: config.MaxRetainFileCount,

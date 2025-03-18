@@ -158,7 +158,7 @@ func TestLoggerWithRotate(t *testing.T) {
 		ErrorFileLevel:     LevelError,
 		ErrorFileExt:       ".err",
 	}))
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 3000; i++ {
 		logrusLogger.Info(ctx, "hello")
 		logrusLogger.WithError(errors.New("test error")).Error(ctx, "hello")
 	}

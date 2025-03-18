@@ -16,15 +16,19 @@ const (
 )
 
 type Options struct {
-	Type          LoggerType
-	Level         Level
-	ServiceName   string
+	Type        LoggerType
+	Level       Level
+	ServiceName string
+	Output      io.Writer
+	// LocalFsConfig 除了向 Output 写入日志外，还会向 LocalFsConfig.Path 写入日志，且按照日志级别写入不同的文件
+	//In addition to writing logs to Output, it will also write logs to LocalFsConfig.Path, and write logs to different files according to the log level
 	LocalFsConfig LocalFsConfig
-	RotateConfig  RotateConfig
-	Caller        bool
-	CallerSkip    int
-	Timestamp     bool
-	Output        io.Writer
+	// RotateConfig 除了向 Output 写入日志外，还会向 RotateConfig.Path 写入日志，按照日志级别写入不同的文件，且按配置轮转或压缩日志
+	// In addition to writing logs to Output, it will also write logs to RotateConfig.Path, and write logs to different files according to the log level, and rotate or compress logs according to the configuration
+	RotateConfig RotateConfig
+	Caller       bool
+	CallerSkip   int
+	Timestamp    bool
 }
 
 type LocalFsConfig struct {

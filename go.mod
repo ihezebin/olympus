@@ -11,6 +11,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-resty/resty/v2 v2.12.0
 	github.com/ihezebin/openapi v1.0.5
+	github.com/ihezebin/rotatelog v1.0.3
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/minio/minio-go/v7 v7.0.70
 	github.com/mitchellh/mapstructure v1.5.0
@@ -29,7 +30,6 @@ require (
 
 require (
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/ihezebin/rotatelog v1.0.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
@@ -152,6 +152,5 @@ require (
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
