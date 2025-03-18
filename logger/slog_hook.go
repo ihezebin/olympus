@@ -40,24 +40,42 @@ func newSlogHook(handler slog.Handler, handlerOpts *slog.HandlerOptions, opt *Op
 
 func (h *slogHook) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newHandler := h.handler.WithAttrs(attrs)
-	return &slogHook{
-		handler:             newHandler,
-		handlerOpts:         h.handlerOpts,
-		opt:                 h.opt,
-		rotateNormalHandler: h.rotateNormalHandler.WithAttrs(attrs),
-		rotateErrHandler:    h.rotateErrHandler.WithAttrs(attrs),
+
+	newHook := &slogHook{
+		handler:     newHandler,
+		handlerOpts: h.handlerOpts,
+		opt:         h.opt,
 	}
+
+	if h.rotateNormalHandler != nil {
+		newHook.rotateNormalHandler = h.rotateNormalHandler.WithAttrs(attrs)
+	}
+
+	if h.rotateErrHandler != nil {
+		newHook.rotateErrHandler = h.rotateErrHandler.WithAttrs(attrs)
+	}
+
+	return newHook
 }
 
 func (h *slogHook) WithGroup(name string) slog.Handler {
 	newHandler := h.handler.WithGroup(name)
-	return &slogHook{
-		handler:             newHandler,
-		handlerOpts:         h.handlerOpts,
-		opt:                 h.opt,
-		rotateNormalHandler: h.rotateNormalHandler.WithGroup(name),
-		rotateErrHandler:    h.rotateErrHandler.WithGroup(name),
+
+	newHook := &slogHook{
+		handler:     newHandler,
+		handlerOpts: h.handlerOpts,
+		opt:         h.opt,
 	}
+
+	if h.rotateNormalHandler != nil {
+		newHook.rotateNormalHandler = h.rotateNormalHandler.WithGroup(name)
+	}
+
+	if h.rotateErrHandler != nil {
+		newHook.rotateErrHandler = h.rotateErrHandler.WithGroup(name)
+	}
+
+	return newHook
 }
 
 func (h *slogHook) Enabled(ctx context.Context, level slog.Level) bool {
@@ -86,9 +104,11 @@ func (h *slogHook) Handle(ctx context.Context, r slog.Record) error {
 			handler = h.rotateNormalHandler
 		}
 
-		err := handler.Handle(ctx, r)
-		if err != nil {
-			return errors.Wrapf(err, "slog rotate handle error")
+		if handler != nil {
+			err := handler.Handle(ctx, r)
+			if err != nil {
+				return errors.Wrapf(err, "slog rotate handle error")
+			}
 		}
 	}
 

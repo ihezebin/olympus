@@ -10,8 +10,7 @@ import (
 )
 
 type slogLogger struct {
-	Logger    *slog.Logger
-	Timestamp bool
+	Logger *slog.Logger
 }
 
 var _ Logger = &slogLogger{}
@@ -41,8 +40,7 @@ func newSlogLogger(opt *Options) *slogLogger {
 	logger := slog.New(hook)
 
 	return &slogLogger{
-		Logger:    logger,
-		Timestamp: opt.Timestamp,
+		Logger: logger,
 	}
 }
 
