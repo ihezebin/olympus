@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -104,4 +105,24 @@ func newZerologTimestampHook() zerolog.Hook {
 
 func (t zerologTimestampHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	e.Int64(FieldKeyTimestamp, time.Now().Unix())
+}
+
+type zerologTraceIdHook struct {
+	GetTraceIdFunc func(ctx context.Context) string
+}
+
+var _ zerolog.Hook = &zerologTraceIdHook{}
+
+func newZerologTraceIdHook(getTraceIdFunc func(ctx context.Context) string) *zerologTraceIdHook {
+	return &zerologTraceIdHook{
+		GetTraceIdFunc: getTraceIdFunc,
+	}
+}
+
+func (h *zerologTraceIdHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	ctx := e.GetCtx()
+	traceId := h.GetTraceIdFunc(ctx)
+	if traceId != "" {
+		e.Str(FieldKeyTraceId, traceId)
+	}
 }

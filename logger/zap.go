@@ -13,6 +13,7 @@ import (
 type zapLogger struct {
 	Logger *zap.Logger
 	Fields []zap.Field
+	Opt    Options
 }
 
 var _ Logger = &zapLogger{}
@@ -45,6 +46,7 @@ func newZapLogger(opt Options) *zapLogger {
 
 	return &zapLogger{
 		Logger: logger,
+		Opt:    opt,
 	}
 }
 
@@ -69,9 +71,11 @@ func levelToZapLevel(level Level) zapcore.Level {
 
 func (l *zapLogger) withContext(ctx context.Context) *zap.Logger {
 	fields := make([]zap.Field, 0)
-	if traceID := ctx.Value("trace_id"); traceID != nil {
-		fields = append(fields, zap.Any("trace_id", traceID))
-
+	if l.Opt.GetTraceIdFunc != nil {
+		traceId := l.Opt.GetTraceIdFunc(ctx)
+		if traceId != "" {
+			fields = append(fields, zap.Any(FieldKeyTraceId, traceId))
+		}
 	}
 	l.Logger = l.Logger.With(fields...)
 	return l.Logger

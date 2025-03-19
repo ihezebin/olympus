@@ -42,6 +42,10 @@ func newLogrusLogger(opt Options) *logrusLogger {
 		logger.AddHook(newLogrusServiceHook(opt.ServiceName))
 	}
 
+	if opt.GetTraceIdFunc != nil {
+		logger.AddHook(newLogrusTraceIdHook(opt.GetTraceIdFunc))
+	}
+
 	if opt.LocalFsConfig.Path != "" {
 		logger.AddHook(newLogrusLocalFsHook(opt.LocalFsConfig))
 	}

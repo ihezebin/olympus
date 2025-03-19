@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestLogger(t *testing.T) {
@@ -24,7 +27,30 @@ func TestLogger(t *testing.T) {
 
 	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
 	zapLogger.Info(ctx, "hello")
+}
 
+func TestLoggerWithTraceId(t *testing.T) {
+	ctx := context.Background()
+	// 配置 TracerProvider
+	tp := trace.NewTracerProvider()
+	otel.SetTracerProvider(tp)
+	defer tp.Shutdown(ctx)
+	// 获取 Tracer
+	tracer := otel.Tracer("github.com/ihezebin/olympus/logger")
+	ctx, span := tracer.Start(ctx, "unit_test")
+	defer span.End()
+
+	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"))
+	logrusLogger.Info(ctx, "hello")
+
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"))
+	zerologLogger.Info(ctx, "hello")
+
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"))
+	slogLogger.Info(ctx, "hello")
+
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
+	zapLogger.Info(ctx, "hello")
 }
 
 func TestLoggerError(t *testing.T) {

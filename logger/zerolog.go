@@ -35,6 +35,10 @@ func newZerologLogger(logger zerolog.Logger, opt Options) *zerologLogger {
 		logger = logger.Hook(newZerologTimestampHook())
 	}
 
+	if opt.GetTraceIdFunc != nil {
+		logger = logger.Hook(newZerologTraceIdHook(opt.GetTraceIdFunc))
+	}
+
 	if opt.LocalFsConfig.Path != "" {
 		hook := newZerologLocalFsHook(logger, opt, opt.LocalFsConfig)
 		logger = logger.Hook(hook)

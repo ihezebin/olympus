@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -151,6 +152,30 @@ func (l *logrusRotateHook) Fire(entry *logrus.Entry) error {
 		if err != nil {
 			return errors.Wrapf(err, "write normal log error")
 		}
+	}
+	return nil
+}
+
+type logrusTraceIdHook struct {
+	GetTraceIdFunc func(ctx context.Context) string
+}
+
+var _ logrus.Hook = &logrusTraceIdHook{}
+
+func newLogrusTraceIdHook(getTraceIdFunc func(ctx context.Context) string) *logrusTraceIdHook {
+	return &logrusTraceIdHook{
+		GetTraceIdFunc: getTraceIdFunc,
+	}
+}
+
+func (h *logrusTraceIdHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *logrusTraceIdHook) Fire(entry *logrus.Entry) error {
+	traceId := h.GetTraceIdFunc(entry.Context)
+	if traceId != "" {
+		entry.Data[FieldKeyTraceId] = traceId
 	}
 	return nil
 }

@@ -29,6 +29,7 @@ const FieldKeyTime = "time"
 const FieldKeyMsg = "msg"
 const FieldKeyLevel = "level"
 const FieldKeyError = "error"
+const FieldKeyTraceId = "trace_id"
 
 type Logger interface {
 	WithError(err error) Logger

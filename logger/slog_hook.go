@@ -123,6 +123,13 @@ func (h *slogHook) Handle(ctx context.Context, r slog.Record) error {
 		r.AddAttrs(slog.String(FieldKeyServiceName, h.opt.ServiceName))
 	}
 
+	if h.opt.GetTraceIdFunc != nil {
+		traceId := h.opt.GetTraceIdFunc(ctx)
+		if traceId != "" {
+			r.AddAttrs(slog.String(FieldKeyTraceId, traceId))
+		}
+	}
+
 	if h.opt.RotateConfig.Path != "" {
 		var handler slog.Handler
 		if r.Level >= levelToSlogLevel(h.opt.RotateConfig.ErrorFileLevel) {

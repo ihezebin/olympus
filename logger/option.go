@@ -1,9 +1,12 @@
 package logger
 
 import (
+	"context"
 	"io"
 	"os"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type LoggerType string
@@ -29,6 +32,10 @@ type Options struct {
 	Caller       bool
 	CallerSkip   int
 	Timestamp    bool
+	// GetTraceId 获取 trace_id 的函数
+	// GetTraceId is a function to get the trace_id
+	// 默认实现使用 opentelemetry 的 trace_id
+	GetTraceIdFunc func(ctx context.Context) string
 }
 
 type LocalFsConfig struct {
@@ -51,14 +58,23 @@ type RotateConfig struct {
 	ErrorFileExt string
 }
 
+var DefaultGetTraceIdFunc = func(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		return spanCtx.TraceID().String()
+	}
+	return ""
+}
+
 func defaultOptions() *Options {
 	return &Options{
-		Type:       LoggerTypeZerolog,
-		Level:      LevelInfo,
-		Caller:     true,
-		CallerSkip: 0,
-		Timestamp:  true,
-		Output:     os.Stdout,
+		Type:           LoggerTypeZerolog,
+		Level:          LevelInfo,
+		Caller:         true,
+		CallerSkip:     0,
+		Timestamp:      true,
+		Output:         os.Stdout,
+		GetTraceIdFunc: DefaultGetTraceIdFunc,
 	}
 }
 
