@@ -45,6 +45,20 @@ func TestServer(t *testing.T) {
 	}
 }
 
+/*
+curl --location 'http://127.0.0.1:8000/hello/ping' \
+--header 'Traceparent: 00-5e64f77760384d153783c96049550881-b7ad6b7169203331-01'
+
+这个 Traceparent 的格式：
+00-5e64f77760384d153783c96049550881-b7ad6b7169203331-01
+00-traceId-spanId-flags
+
+traceId: 5e64f77760384d153783c96049550881
+spanId: b7ad6b7169203331
+flags: 01
+
+相关文档：https://opentelemetry.io/docs/specs/otel/context/api-propagators/#w3c-trace-context-requirements
+*/
 func TestServerWithOtel(t *testing.T) {
 	server := NewServer(
 		WithPort(8000),
