@@ -10,5 +10,6 @@ import (
 func TestLogger(t *testing.T) {
 	ctx := context.Background()
 
-	logger.Info(ctx, "hello")
+	logger.Error(ctx, "hello")
+	logger.WithField("key", "value").Info(ctx, "hello")
 }

@@ -11,6 +11,7 @@ import (
 type logrusLogger struct {
 	Logger *logrus.Logger
 	Entry  *logrus.Entry
+	Opt    Options
 }
 
 var _ Logger = &logrusLogger{}
@@ -61,6 +62,7 @@ func newLogrusLogger(opt Options) *logrusLogger {
 	return &logrusLogger{
 		Logger: logger,
 		Entry:  logrus.NewEntry(logger),
+		Opt:    opt,
 	}
 }
 
@@ -81,6 +83,11 @@ func levelToLogrusLevel(level Level) logrus.Level {
 	default:
 		return logrus.InfoLevel
 	}
+}
+
+func (l *logrusLogger) newWithoutCallerSkip() Logger {
+	l.Opt.CallerSkip = 0
+	return newLogrusLogger(l.Opt)
 }
 
 func (l *logrusLogger) WithError(err error) Logger {

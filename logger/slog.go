@@ -11,6 +11,7 @@ import (
 
 type slogLogger struct {
 	Logger *slog.Logger
+	Opt    Options
 }
 
 var _ Logger = &slogLogger{}
@@ -41,6 +42,7 @@ func newSlogLogger(opt Options) *slogLogger {
 
 	return &slogLogger{
 		Logger: logger,
+		Opt:    opt,
 	}
 }
 
@@ -61,6 +63,11 @@ func levelToSlogLevel(level Level) slog.Level {
 	default:
 		return slog.LevelInfo
 	}
+}
+
+func (l *slogLogger) newWithoutCallerSkip() Logger {
+	l.Opt.CallerSkip = 0
+	return newSlogLogger(l.Opt)
 }
 
 func (l *slogLogger) WithError(err error) Logger {

@@ -65,6 +65,7 @@ type Logger interface {
 	Errorln(ctx context.Context, args ...interface{})
 	Panicln(ctx context.Context, args ...interface{})
 	Fatalln(ctx context.Context, args ...interface{})
+	newWithoutCallerSkip() Logger
 }
 
 var logger Logger = New(WithLoggerType(LoggerTypeZerolog), WithCallerSkip(1))
@@ -108,15 +109,15 @@ func New(opts ...Option) Logger {
 }
 
 func WithError(err error) Logger {
-	return logger.WithError(err)
+	return logger.newWithoutCallerSkip().WithError(err)
 }
 
 func WithField(key string, value interface{}) Logger {
-	return logger.WithField(key, value)
+	return logger.newWithoutCallerSkip().WithField(key, value)
 }
 
 func WithFields(fields map[string]interface{}) Logger {
-	return logger.WithFields(fields)
+	return logger.newWithoutCallerSkip().WithFields(fields)
 }
 
 func Log(ctx context.Context, level Level, args ...interface{}) {
@@ -193,6 +194,46 @@ func Errorf(ctx context.Context, format string, args ...interface{}) {
 
 func Panicf(ctx context.Context, format string, args ...interface{}) {
 	logger.Panicf(ctx, format, args...)
+}
+
+func Fatalf(ctx context.Context, format string, args ...interface{}) {
+	logger.Fatalf(ctx, format, args...)
+}
+
+func Logln(ctx context.Context, level Level, args ...interface{}) {
+	logger.Logln(ctx, level, args...)
+}
+
+func Traceln(ctx context.Context, args ...interface{}) {
+	logger.Traceln(ctx, args...)
+}
+
+func Debugln(ctx context.Context, args ...interface{}) {
+	logger.Debugln(ctx, args...)
+}
+
+func Infoln(ctx context.Context, args ...interface{}) {
+	logger.Infoln(ctx, args...)
+}
+
+func Warnln(ctx context.Context, args ...interface{}) {
+	logger.Warnln(ctx, args...)
+}
+
+func Warningln(ctx context.Context, args ...interface{}) {
+	logger.Warningln(ctx, args...)
+}
+
+func Println(ctx context.Context, args ...interface{}) {
+	logger.Println(ctx, args...)
+}
+
+func Errorln(ctx context.Context, args ...interface{}) {
+	logger.Errorln(ctx, args...)
+}
+
+func Panicln(ctx context.Context, args ...interface{}) {
+	logger.Panicln(ctx, args...)
 }
 
 func Fatalln(ctx context.Context, args ...interface{}) {
