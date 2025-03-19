@@ -87,7 +87,7 @@ func levelToZerologLevel(level Level) zerolog.Level {
 
 func (l *zerologLogger) newWithoutCallerSkip() Logger {
 	l.Opt.CallerSkip = 0
-	return newZerologLogger(l.Logger, l.Opt)
+	return newZerologLogger(zerolog.New(l.Opt.Output), l.Opt)
 }
 
 func (l *zerologLogger) WithError(err error) Logger {
