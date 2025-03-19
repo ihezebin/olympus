@@ -68,21 +68,18 @@ type Logger interface {
 	newWithoutCallerSkip() Logger
 }
 
-var logger Logger = New(WithLoggerType(LoggerTypeZerolog), WithCallerSkip(1))
+var logger Logger = ResetLoggerWithOptions(WithLoggerType(LoggerTypeZerolog))
 
 func ResetLogger(l Logger) {
 	logger = l
 }
 
-func ResetLoggerWithOptions(opts ...Option) {
-	options := defaultOptions()
-	opt := WithCallerSkip(1)
-	opt(options)
-	for _, opt := range opts {
-		opt(options)
-	}
+func ResetLoggerWithOptions(opts ...Option) Logger {
+	newOpts := make([]Option, 0, len(opts)+1)
+	newOpts = append(newOpts, WithCallerSkip(1))
+	newOpts = append(newOpts, opts...)
 
-	logger = New(opts...)
+	return New(newOpts...)
 }
 
 func New(opts ...Option) Logger {
