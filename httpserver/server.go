@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/ihezebin/olympus/httpserver/middleware"
+	"github.com/ihezebin/olympus/httpserver/internal"
 	"github.com/ihezebin/olympus/logger"
 )
 
@@ -44,8 +44,8 @@ func NewServer(opts ...ServerOption) *server {
 	shutdowns := make([]func(context.Context) error, 0)
 	if serverOptions.Otel {
 		serverOptions.OtelInit(shutdowns)
-		engine.Use(middleware.OtelExtractTrace(serverOptions.ServiceName))
-		engine.Use(middleware.OtelInjectTrace())
+		engine.Use(internal.OtelExtractTrace(serverOptions.ServiceName))
+		engine.Use(internal.OtelInjectTrace())
 	}
 
 	// 设置服务名称
