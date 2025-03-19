@@ -2,13 +2,13 @@ package httpserver
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
 
 	"github.com/ihezebin/olympus/httpserver/middleware"
+	"github.com/ihezebin/olympus/logger"
 )
 
 var ctx = context.Background()
@@ -44,6 +44,20 @@ func TestServer(t *testing.T) {
 	}
 }
 
+func TestServerWithOtel(t *testing.T) {
+	server := NewServer(
+		WithPort(8000),
+		WithServiceName("test_server"),
+		WithOtel(true),
+	)
+
+	server.RegisterRoutes(&HelloRouter{})
+
+	if err := server.RunWithNotifySignal(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
 type HelloRouter struct {
 }
 
@@ -70,6 +84,7 @@ func (h *HelloRouter) Hello(c *gin.Context, req *HelloReq) (resp *HelloResp, err
 }
 
 func (h *HelloRouter) Ping(c *gin.Context, req map[string]interface{}) (resp string, err error) {
-	fmt.Println(req)
+	ctx := c.Request.Context()
+	logger.Infof(ctx, "%+v", req)
 	return "pong", nil
 }

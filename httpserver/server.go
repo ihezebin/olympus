@@ -15,15 +15,17 @@ import (
 	"github.com/ihezebin/openapi"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/ihezebin/olympus/logger"
 )
 
 type server struct {
 	*http.Server
-	options *ServerOptions
-	engine  *gin.Engine
-	openapi *openapi.API
+	options   *ServerOptions
+	engine    *gin.Engine
+	openapi   *openapi.API
+	shutdowns []func(context.Context) error
 }
 
 func NewServer(opts ...ServerOption) *server {
@@ -38,6 +40,12 @@ func NewServer(opts ...ServerOption) *server {
 	engine := gin.New()
 	// 中间件
 	engine.Use(serverOptions.Middlewares...)
+
+	shutdowns := make([]func(context.Context) error, 0)
+	if serverOptions.Otel {
+		engine.Use(otelgin.Middleware(serverOptions.ServiceName))
+		serverOptions.OtelInit(shutdowns)
+	}
 
 	// 设置服务名称
 	serviceName := "olympus httpserver"
@@ -72,14 +80,19 @@ func NewServer(opts ...ServerOption) *server {
 	openApi := openapi.NewAPI(serviceName, openapiOpts...)
 	openApi.RegisterModel(openapi.ModelOf[Body[any]]())
 
+	kernel := &http.Server{
+		Handler: engine,
+		Addr:    fmt.Sprintf(":%d", serverOptions.Port),
+	}
+
+	shutdowns = append(shutdowns, kernel.Shutdown)
+
 	server := &server{
-		Server: &http.Server{
-			Handler: engine,
-			Addr:    fmt.Sprintf(":%d", serverOptions.Port),
-		},
-		options: serverOptions,
-		engine:  engine,
-		openapi: openApi,
+		Server:    kernel,
+		options:   serverOptions,
+		engine:    engine,
+		openapi:   openApi,
+		shutdowns: shutdowns,
 	}
 
 	return server
@@ -168,5 +181,10 @@ func (s *server) RunWithNotifySignal(ctx context.Context) error {
 }
 
 func (s *server) Close(ctx context.Context) error {
-	return s.Shutdown(ctx)
+	for _, shutdown := range s.shutdowns {
+		if err := shutdown(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
