@@ -10,7 +10,7 @@ import (
 
 type zapHook struct {
 	core                                  zapcore.Core
-	opt                                   *Options
+	opt                                   Options
 	rotateNormalWriter, rotateErrWriter   io.Writer
 	localFsNormalWriter, localFsErrWriter io.Writer
 	encoder                               zapcore.Encoder
@@ -18,7 +18,7 @@ type zapHook struct {
 
 var _ zapcore.Core = &zapHook{}
 
-func newZapHook(core zapcore.Core, encoder zapcore.Encoder, opt *Options) *zapHook {
+func newZapHook(core zapcore.Core, encoder zapcore.Encoder, opt Options) *zapHook {
 	hook := &zapHook{core: core, encoder: encoder, opt: opt}
 
 	if opt.LocalFsConfig.Path != "" {

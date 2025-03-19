@@ -10,14 +10,14 @@ import (
 
 type zerologLogger struct {
 	Logger zerolog.Logger
-	Opt    *Options
+	Opt    Options
 	Err    error
 	Fields map[string]interface{}
 }
 
 var _ Logger = &zerologLogger{}
 
-func newZerologLogger(logger zerolog.Logger, opt *Options) *zerologLogger {
+func newZerologLogger(logger zerolog.Logger, opt Options) *zerologLogger {
 	zerolog.MessageFieldName = FieldKeyMsg
 	zerolog.CallerFieldName = FieldKeyCaller
 	zerolog.TimestampFieldName = FieldKeyTime

@@ -15,7 +15,7 @@ type zerologRotateHook struct {
 
 var _ zerolog.Hook = &zerologRotateHook{}
 
-func newZerologRotateHook(logger zerolog.Logger, opt *Options, config RotateConfig) (*zerologRotateHook, error) {
+func newZerologRotateHook(logger zerolog.Logger, opt Options, config RotateConfig) (*zerologRotateHook, error) {
 	normalWriter, errWriter, err := newRotateWriter(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "new writer error")
@@ -51,7 +51,7 @@ type zerologLocalFsHook struct {
 
 var _ zerolog.Hook = &zerologLocalFsHook{}
 
-func newZerologLocalFsHook(logger zerolog.Logger, opt *Options, config LocalFsConfig) *zerologLocalFsHook {
+func newZerologLocalFsHook(logger zerolog.Logger, opt Options, config LocalFsConfig) *zerologLocalFsHook {
 	normalWriter, errWriter, err := newLocalFsWriter(config)
 	if err != nil {
 		panic(fmt.Sprintf("new local fs writer error: %s", err))

@@ -15,7 +15,7 @@ type slogLogger struct {
 
 var _ Logger = &slogLogger{}
 
-func newSlogLogger(opt *Options) *slogLogger {
+func newSlogLogger(opt Options) *slogLogger {
 	var handler slog.Handler
 
 	handlerOpts := &slog.HandlerOptions{

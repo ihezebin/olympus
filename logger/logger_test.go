@@ -45,6 +45,14 @@ func TestLoggerError(t *testing.T) {
 	zapLogger.WithError(err).Error(ctx, "hello err")
 }
 
+/*
+BenchmarkLogger/info/default/logrus-8     393117              3070 ns/op            1762 B/op         34 allocs/op
+BenchmarkLogger/info/default/zerolog-8    715218              1744 ns/op            1977 B/op         15 allocs/op
+BenchmarkLogger/info/default/slog-8       602392              1900 ns/op             432 B/op         11 allocs/op
+BenchmarkLogger/info/default/zap-8        844246              1512 ns/op             825 B/op          9 allocs/op
+
+zap > slog > zerolog > logrus
+*/
 func BenchmarkLogger(b *testing.B) {
 	ctx := context.Background()
 
@@ -54,7 +62,7 @@ func BenchmarkLogger(b *testing.B) {
 	}
 
 	// 测试普通信息日志
-	b.Run("info/plain", func(b *testing.B) {
+	b.Run("info/default", func(b *testing.B) {
 		b.Run("logrus", func(b *testing.B) {
 			logrusLogger := New(append(noOutputOpts, WithLoggerType(LoggerTypeLogrus))...)
 			b.ResetTimer()

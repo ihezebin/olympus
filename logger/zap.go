@@ -17,7 +17,7 @@ type zapLogger struct {
 
 var _ Logger = &zapLogger{}
 
-func newZapLogger(opt *Options) *zapLogger {
+func newZapLogger(opt Options) *zapLogger {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = FieldKeyTime
 	encoderConfig.MessageKey = FieldKeyMsg

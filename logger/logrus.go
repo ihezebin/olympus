@@ -15,7 +15,7 @@ type logrusLogger struct {
 
 var _ Logger = &logrusLogger{}
 
-func newLogrusLogger(opt *Options) *logrusLogger {
+func newLogrusLogger(opt Options) *logrusLogger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: time.DateTime,

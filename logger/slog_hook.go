@@ -11,14 +11,14 @@ import (
 type slogHook struct {
 	handler                                 slog.Handler
 	handlerOpts                             *slog.HandlerOptions
-	opt                                     *Options
+	opt                                     Options
 	rotateNormalHandler, rotateErrHandler   slog.Handler
 	localFsNormalHandler, localFsErrHandler slog.Handler
 }
 
 var _ slog.Handler = &slogHook{}
 
-func newSlogHook(handler slog.Handler, handlerOpts *slog.HandlerOptions, opt *Options) *slogHook {
+func newSlogHook(handler slog.Handler, handlerOpts *slog.HandlerOptions, opt Options) *slogHook {
 
 	hook := &slogHook{
 		handler:     handler,

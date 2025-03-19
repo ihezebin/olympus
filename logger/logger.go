@@ -90,15 +90,15 @@ func New(opts ...Option) Logger {
 	var l Logger
 	switch options.Type {
 	case LoggerTypeLogrus:
-		l = newLogrusLogger(options)
+		l = newLogrusLogger(*options)
 	case LoggerTypeZerolog:
-		l = newZerologLogger(zerolog.New(options.Output), options)
+		l = newZerologLogger(zerolog.New(options.Output), *options)
 	case LoggerTypeZap:
-		l = newZapLogger(options)
+		l = newZapLogger(*options)
 	case LoggerTypeSlog:
-		l = newSlogLogger(options)
+		l = newSlogLogger(*options)
 	default:
-		l = newZerologLogger(zerolog.New(options.Output), options)
+		l = newZerologLogger(zerolog.New(options.Output), *options)
 	}
 
 	return l
