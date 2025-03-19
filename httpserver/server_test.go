@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ihezebin/openapi"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ihezebin/olympus/httpserver/middleware"
 	"github.com/ihezebin/olympus/logger"
@@ -85,6 +86,9 @@ func (h *HelloRouter) Hello(c *gin.Context, req *HelloReq) (resp *HelloResp, err
 
 func (h *HelloRouter) Ping(c *gin.Context, req map[string]interface{}) (resp string, err error) {
 	ctx := c.Request.Context()
-	logger.Infof(ctx, "%+v", req)
-	return "pong", nil
+
+	traceId := trace.SpanContextFromContext(ctx).TraceID().String()
+
+	logger.Infof(ctx, "traceId: %s, req: %+v", traceId, req)
+	return "pong!" + traceId, nil
 }

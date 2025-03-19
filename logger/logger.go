@@ -67,7 +67,7 @@ type Logger interface {
 	Fatalln(ctx context.Context, args ...interface{})
 }
 
-var logger Logger = New(WithLoggerType(LoggerTypeZerolog))
+var logger Logger = New(WithLoggerType(LoggerTypeZerolog), WithCallerSkip(1))
 
 func ResetLogger(l Logger) {
 	logger = l
@@ -75,6 +75,8 @@ func ResetLogger(l Logger) {
 
 func ResetLoggerWithOptions(opts ...Option) {
 	options := defaultOptions()
+	opt := WithCallerSkip(1)
+	opt(options)
 	for _, opt := range opts {
 		opt(options)
 	}
