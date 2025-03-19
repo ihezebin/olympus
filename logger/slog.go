@@ -65,11 +65,6 @@ func levelToSlogLevel(level Level) slog.Level {
 	}
 }
 
-func (l *slogLogger) newWithoutCallerSkip() Logger {
-	l.Opt.CallerSkip = 0
-	return newSlogLogger(l.Opt)
-}
-
 func (l *slogLogger) WithError(err error) Logger {
 	newLogger := l.Logger.With(slog.Any(FieldKeyError, err))
 	return &slogLogger{Logger: newLogger}

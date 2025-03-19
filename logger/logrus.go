@@ -32,7 +32,7 @@ func newLogrusLogger(opt Options) *logrusLogger {
 
 	if opt.Caller {
 		logger.SetReportCaller(false)
-		logger.AddHook(newLogrusCallerHook(8 + opt.CallerSkip))
+		logger.AddHook(newLogrusCallerHook())
 	}
 
 	if opt.Timestamp {
@@ -83,11 +83,6 @@ func levelToLogrusLevel(level Level) logrus.Level {
 	default:
 		return logrus.InfoLevel
 	}
-}
-
-func (l *logrusLogger) newWithoutCallerSkip() Logger {
-	l.Opt.CallerSkip = 0
-	return newLogrusLogger(l.Opt)
 }
 
 func (l *logrusLogger) WithError(err error) Logger {

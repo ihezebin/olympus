@@ -111,7 +111,7 @@ func (h *slogHook) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (h *slogHook) Handle(ctx context.Context, r slog.Record) error {
 	if h.opt.Caller {
-		caller := getCaller(h.opt.CallerSkip + 5)
+		caller := getCaller()
 		r.AddAttrs(slog.String(FieldKeyCaller, caller))
 	}
 

@@ -53,18 +53,16 @@ func (l *logrusLocalFsHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-type logrusCallerHook struct {
-	skipFrameCount int
-}
+type logrusCallerHook struct{}
 
 var _ logrus.Hook = &logrusCallerHook{}
 
-func newLogrusCallerHook(skipFrameCount int) *logrusCallerHook {
-	return &logrusCallerHook{skipFrameCount: skipFrameCount}
+func newLogrusCallerHook() *logrusCallerHook {
+	return &logrusCallerHook{}
 }
 
 func (h *logrusCallerHook) Fire(entry *logrus.Entry) error {
-	entry.Data[FieldKeyCaller] = getCaller(h.skipFrameCount)
+	entry.Data[FieldKeyCaller] = getCaller()
 	return nil
 }
 

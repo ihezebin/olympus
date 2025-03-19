@@ -53,7 +53,7 @@ func newZerologLogger(logger zerolog.Logger, opt Options) *zerologLogger {
 	}
 
 	if opt.Caller {
-		logger = logger.With().CallerWithSkipFrameCount(4 + opt.CallerSkip).Logger()
+		logger = logger.Hook(newZerologCallerHook())
 	}
 
 	return &zerologLogger{
@@ -83,11 +83,6 @@ func levelToZerologLevel(level Level) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
-}
-
-func (l *zerologLogger) newWithoutCallerSkip() Logger {
-	l.Opt.CallerSkip = 0
-	return newZerologLogger(zerolog.New(l.Opt.Output), l.Opt)
 }
 
 func (l *zerologLogger) WithError(err error) Logger {

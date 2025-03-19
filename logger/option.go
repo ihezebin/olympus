@@ -9,15 +9,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type LoggerType string
-
-const (
-	LoggerTypeLogrus  LoggerType = "logrus"
-	LoggerTypeZap     LoggerType = "zap"
-	LoggerTypeSlog    LoggerType = "slog"
-	LoggerTypeZerolog LoggerType = "zerolog"
-)
-
 type Options struct {
 	Type        LoggerType
 	Level       Level
@@ -30,7 +21,6 @@ type Options struct {
 	// In addition to writing logs to Output, it will also write logs to RotateConfig.Path, and write logs to different files according to the log level, and rotate or compress logs according to the configuration
 	RotateConfig RotateConfig
 	Caller       bool
-	CallerSkip   int
 	Timestamp    bool
 	// GetTraceId 获取 trace_id 的函数
 	// GetTraceId is a function to get the trace_id
@@ -68,10 +58,9 @@ var DefaultGetTraceIdFunc = func(ctx context.Context) string {
 
 func defaultOptions() *Options {
 	return &Options{
-		Type:           LoggerTypeZerolog,
+		Type:           LoggerTypeZap,
 		Level:          LevelInfo,
 		Caller:         true,
-		CallerSkip:     0,
 		Timestamp:      true,
 		Output:         os.Stdout,
 		GetTraceIdFunc: DefaultGetTraceIdFunc,
@@ -79,12 +68,6 @@ func defaultOptions() *Options {
 }
 
 type Option func(*Options)
-
-func WithCallerSkip(skip int) Option {
-	return func(o *Options) {
-		o.CallerSkip = skip
-	}
-}
 
 func WithOutput(w io.Writer) Option {
 	return func(o *Options) {

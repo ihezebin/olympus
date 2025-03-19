@@ -81,11 +81,6 @@ func (l *zapLogger) withContext(ctx context.Context) *zap.Logger {
 	return l.Logger
 }
 
-func (l *zapLogger) newWithoutCallerSkip() Logger {
-	l.Opt.CallerSkip = 0
-	return newZapLogger(l.Opt)
-}
-
 func (l *zapLogger) WithError(err error) Logger {
 	newFields := make([]zap.Field, 0)
 	newFields = append(newFields, l.Fields...)

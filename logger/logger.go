@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rs/zerolog"
 )
@@ -20,6 +21,15 @@ const (
 	LevelError Level = "error"
 	LevelFatal Level = "fatal"
 	LevelPanic Level = "panic"
+)
+
+type LoggerType string
+
+const (
+	LoggerTypeLogrus  LoggerType = "logrus"
+	LoggerTypeZap     LoggerType = "zap"
+	LoggerTypeSlog    LoggerType = "slog"
+	LoggerTypeZerolog LoggerType = "zerolog"
 )
 
 const FieldKeyTimestamp = "timestamp"
@@ -65,21 +75,17 @@ type Logger interface {
 	Errorln(ctx context.Context, args ...interface{})
 	Panicln(ctx context.Context, args ...interface{})
 	Fatalln(ctx context.Context, args ...interface{})
-	newWithoutCallerSkip() Logger
 }
 
-var logger Logger = ResetLoggerWithOptions(WithLoggerType(LoggerTypeZerolog))
+var logger Logger = New()
 
 func ResetLogger(l Logger) {
 	logger = l
 }
 
 func ResetLoggerWithOptions(opts ...Option) Logger {
-	newOpts := make([]Option, 0, len(opts)+1)
-	newOpts = append(newOpts, WithCallerSkip(1))
-	newOpts = append(newOpts, opts...)
-
-	return New(newOpts...)
+	logger = New(opts...)
+	return logger
 }
 
 func New(opts ...Option) Logger {
@@ -99,22 +105,22 @@ func New(opts ...Option) Logger {
 	case LoggerTypeSlog:
 		l = newSlogLogger(*options)
 	default:
-		l = newZerologLogger(zerolog.New(options.Output), *options)
+		panic(fmt.Sprintf("unsupported logger type: %s", options.Type))
 	}
 
 	return l
 }
 
 func WithError(err error) Logger {
-	return logger.newWithoutCallerSkip().WithError(err)
+	return logger.WithError(err)
 }
 
 func WithField(key string, value interface{}) Logger {
-	return logger.newWithoutCallerSkip().WithField(key, value)
+	return logger.WithField(key, value)
 }
 
 func WithFields(fields map[string]interface{}) Logger {
-	return logger.newWithoutCallerSkip().WithFields(fields)
+	return logger.WithFields(fields)
 }
 
 func Log(ctx context.Context, level Level, args ...interface{}) {

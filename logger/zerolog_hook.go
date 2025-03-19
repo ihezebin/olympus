@@ -23,9 +23,8 @@ func newZerologRotateHook(logger zerolog.Logger, opt Options, config RotateConfi
 	}
 
 	// 使用 With() 创建一个新的 logger
-	normalLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(normalWriter)
-
-	errLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(errWriter)
+	normalLogger := logger.Output(normalWriter)
+	errLogger := logger.Output(errWriter)
 
 	return &zerologRotateHook{
 		normalLogger: normalLogger,
@@ -58,8 +57,8 @@ func newZerologLocalFsHook(logger zerolog.Logger, opt Options, config LocalFsCon
 		panic(fmt.Sprintf("new local fs writer error: %s", err))
 	}
 
-	normalLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(normalWriter)
-	errLogger := logger.With().CallerWithSkipFrameCount(opt.CallerSkip + 7).Logger().Output(errWriter)
+	normalLogger := logger.Output(normalWriter)
+	errLogger := logger.Output(errWriter)
 
 	return &zerologLocalFsHook{
 		normalLogger: normalLogger,
@@ -125,4 +124,17 @@ func (h *zerologTraceIdHook) Run(e *zerolog.Event, level zerolog.Level, msg stri
 	if traceId != "" {
 		e.Str(FieldKeyTraceId, traceId)
 	}
+}
+
+type zerologCallerHook struct {
+}
+
+var _ zerolog.Hook = &zerologCallerHook{}
+
+func newZerologCallerHook() zerolog.Hook {
+	return &zerologCallerHook{}
+}
+
+func (h *zerologCallerHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	e.Str(FieldKeyCaller, getCaller())
 }

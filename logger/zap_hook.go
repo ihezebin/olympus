@@ -64,7 +64,7 @@ func (h *zapHook) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	newFields = append(newFields, fields...)
 
 	if h.opt.Caller {
-		caller := getCaller(h.opt.CallerSkip + 6)
+		caller := getCaller()
 		newFields = append(newFields, zapcore.Field{
 			Key:    FieldKeyCaller,
 			Type:   zapcore.StringType,
