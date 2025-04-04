@@ -18,5 +18,10 @@ func WithFileName(fileName string) Option {
 	return func(c *Config) {
 		c.fileName = fileName
 	}
+}
 
+func WithEnv() Option {
+	return func(c *Config) {
+		c.env = true
+	}
 }
