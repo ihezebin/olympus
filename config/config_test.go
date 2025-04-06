@@ -35,6 +35,7 @@ func TestConfigEnvVars(t *testing.T) {
 	// 设置环境变量
 	os.Setenv("APP_NAME", "MyViperApp")
 	os.Setenv("APP_VERSION", "1.0.0")
+	os.Setenv("SERVER_PORT", "8080")
 
 	// 定义配置结构体
 	type AppConfig struct {
@@ -42,6 +43,9 @@ func TestConfigEnvVars(t *testing.T) {
 		AppVersion string `env:"APP_VERSION" json:"app_version"`
 		Name       string `json:"name" env:"NAME"`
 		Version    string `json:"version"`
+		Server     struct {
+			Port int `json:"port" env:"SERVER_PORT"`
+		} `json:"server"`
 	}
 
 	// 创建配置实例

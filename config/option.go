@@ -20,6 +20,7 @@ func WithFileName(fileName string) Option {
 	}
 }
 
+// WithEnv 使用环境变量, 优先级最高，会覆盖配置文件
 func WithEnv() Option {
 	return func(c *Config) {
 		c.env = true

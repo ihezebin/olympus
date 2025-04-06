@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
+	"strconv"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -106,7 +106,6 @@ func (c *Config) Kernel() *viper.Viper {
 }
 
 func (c *Config) Load(dest interface{}) error {
-	// 读取配置文件
 	if c.kernel.ConfigFileUsed() != "" || len(c.filePaths) > 0 {
 		if err := c.kernel.ReadInConfig(); err != nil {
 			return errors.Wrap(err, "failed to load config file path")
@@ -118,48 +117,82 @@ func (c *Config) Load(dest interface{}) error {
 		}
 	}
 
-	// 处理环境变量
+	err := c.Kernel().Unmarshal(dest, func(d *mapstructure.DecoderConfig) {
+		d.TagName = string(c.destTagName)
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal config")
+	}
+
 	if c.env {
-		if err := c.bindEnvVars(dest); err != nil {
+		if err := c.bindEnv(dest); err != nil {
 			return errors.Wrap(err, "failed to bind environment variables")
 		}
 	}
 
-	// 使用 viper 的 Unmarshal 功能
-	return c.Kernel().Unmarshal(dest, func(d *mapstructure.DecoderConfig) {
-		d.TagName = string(c.destTagName)
-	})
+	return nil
 }
 
-// bindEnvVars 处理环境变量绑定
-func (c *Config) bindEnvVars(dest interface{}) error {
-	val := reflect.ValueOf(dest)
-	if val.Kind() != reflect.Ptr || val.Elem().Kind() != reflect.Struct {
+// bindEnv 读取环境变量
+func (c *Config) bindEnv(dest interface{}) error {
+	destVal := reflect.ValueOf(dest)
+	if destVal.Kind() != reflect.Ptr || destVal.Elem().Kind() != reflect.Struct {
 		return nil
 	}
 
-	val = val.Elem()
+	val := destVal.Elem()
 	typ := val.Type()
 
 	for i := 0; i < val.NumField(); i++ {
 		field := typ.Field(i)
 		envTag := field.Tag.Get("env")
-		if envTag == "" {
-			continue
-		}
 
-		// 获取环境变量值
-		envValue := os.Getenv(envTag)
-		if envValue == "" {
-			continue
+		switch field.Type.Kind() {
+		case reflect.String:
+			if envTag != "" {
+				envValue := os.Getenv(envTag)
+				if envValue != "" {
+					val.Field(i).SetString(envValue)
+				}
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if envTag != "" {
+				envValue := os.Getenv(envTag)
+				if envValue != "" {
+					intValue, err := strconv.Atoi(envValue)
+					if err != nil {
+						return errors.Wrap(err, "failed to convert environment variable to int")
+					}
+					val.Field(i).SetInt(int64(intValue))
+				}
+			}
+		case reflect.Float64, reflect.Float32:
+			if envTag != "" {
+				envValue := os.Getenv(envTag)
+				if envValue != "" {
+					floatValue, err := strconv.ParseFloat(envValue, 64)
+					if err != nil {
+						return errors.Wrap(err, "failed to convert environment variable to float")
+					}
+					val.Field(i).SetFloat(floatValue)
+				}
+			}
+		case reflect.Bool:
+			if envTag != "" {
+				envValue := os.Getenv(envTag)
+				if envValue != "" {
+					boolValue, err := strconv.ParseBool(envValue)
+					if err != nil {
+						return errors.Wrap(err, "failed to convert environment variable to bool")
+					}
+					val.Field(i).SetBool(boolValue)
+				}
+			}
+		case reflect.Struct:
+			if err := c.bindEnv(val.Field(i).Addr().Interface()); err != nil {
+				return errors.Wrapf(err, "failed to bind environment variables in child struct: %s", field.Name)
+			}
 		}
-
-		// 设置 viper 中的值
-		fieldName := field.Name
-		if jsonTag := field.Tag.Get("json"); jsonTag != "" {
-			fieldName = strings.Split(jsonTag, ",")[0]
-		}
-		c.kernel.Set(fieldName, envValue)
 	}
 
 	return nil
