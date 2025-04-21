@@ -13,7 +13,7 @@ func init() {
 	//默认初始化程序时区为东8区
 	time.Local = util.DefaultTZ
 	afterTime := now.In(time.Local).Format(time.DateTime)
-	fmt.Printf("[Soup] Now default TimeZone: %s, Set to %s\n", beforeTime, afterTime)
+	fmt.Printf("[Olympus] Now default TimeZone: %s, Set to %s\n", beforeTime, afterTime)
 }
 
 // UseUTC 支持显示调用，设置程序时区为UTC时区

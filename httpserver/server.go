@@ -25,8 +25,10 @@ type server struct {
 	options   *ServerOptions
 	engine    *gin.Engine
 	openapi   *openapi.API
-	shutdowns []func(context.Context) error
+	shutdowns []ShutdownFunc
 }
+
+type ShutdownFunc func(context.Context) error
 
 func NewServer(opts ...ServerOption) *server {
 	serverOptions := mergeServerOptions(opts...)
@@ -41,9 +43,9 @@ func NewServer(opts ...ServerOption) *server {
 	// 中间件
 	engine.Use(serverOptions.Middlewares...)
 
-	shutdowns := make([]func(context.Context) error, 0)
+	shutdowns := make([]ShutdownFunc, 0)
 	if serverOptions.Otel {
-		serverOptions.OtelInit(shutdowns)
+		shutdowns = append(shutdowns, serverOptions.OtelInit()...)
 		engine.Use(internal.OtelExtractTrace(serverOptions.ServiceName))
 		engine.Use(internal.OtelInjectTrace())
 	}
@@ -111,11 +113,11 @@ func (s *server) OpenAPI() *openapi.API {
 	return s.openapi
 }
 
-type Routes interface {
+type RegisterRoutes interface {
 	RegisterRoutes(router Router)
 }
 
-func (s *server) RegisterRoutes(routers ...Routes) {
+func (s *server) RegisterRoutes(routers ...RegisterRoutes) {
 	for _, router := range routers {
 		router.RegisterRoutes(&openapiRouter{
 			router:  s.engine,
