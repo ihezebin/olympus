@@ -84,15 +84,19 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 		semconv.ServiceName(serviceName),
 	)
 	// https://www.hezebin.com/article/67d1556324efba7f96725c83
+	var tp *trace.TracerProvider
 	if serverOptions.TraceExporter != nil {
-		tp := trace.NewTracerProvider(
+		tp = trace.NewTracerProvider(
 			trace.WithBatcher(serverOptions.TraceExporter),
 			trace.WithResource(otelResource),
 		)
-
-		otel.SetTracerProvider(tp)
-		shutdowns = append(shutdowns, tp.Shutdown)
+	} else {
+		tp = trace.NewTracerProvider(
+			trace.WithResource(otelResource),
+		)
 	}
+	otel.SetTracerProvider(tp)
+	shutdowns = append(shutdowns, tp.Shutdown)
 
 	// default true
 	if serverOptions.Metrics {

@@ -7,21 +7,12 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 )
 
+// OtelExtractTrace 提取 traceId
 func OtelExtractTrace(service string) gin.HandlerFunc {
-
-	return func(c *gin.Context) {
-		// 如果没有 traceId 则生成一个
-		ctx := c.Request.Context()
-		traceId := c.Request.Header.Get("traceparent")
-		if traceId == "" {
-			ctx, span := otel.GetTracerProvider().Tracer(service).Start(ctx, c.FullPath())
-			defer span.End()
-			c.Request = c.Request.WithContext(ctx)
-		}
-		otelgin.Middleware(service)(c)
-	}
+	return otelgin.Middleware(service)
 }
 
+// OtelInjectTrace 注入 traceId
 func OtelInjectTrace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
