@@ -95,6 +95,7 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 		)
 
 		otel.SetTracerProvider(tp)
+		shutdowns = append(shutdowns, tp.Shutdown)
 	}
 
 	// default true
@@ -108,7 +109,7 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 			metric.WithResource(otelResource),
 		)
 		otel.SetMeterProvider(mp)
-
+		shutdowns = append(shutdowns, mp.Shutdown)
 		engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 
@@ -118,6 +119,7 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 			log.WithResource(otelResource),
 		)
 		global.SetLoggerProvider(lp)
+		shutdowns = append(shutdowns, lp.Shutdown)
 	}
 
 	openapiOpts := make([]openapi.APIOpts, 0)
@@ -135,7 +137,8 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 		Addr:    fmt.Sprintf(":%d", serverOptions.Port),
 	}
 
-	shutdowns = append(shutdowns, kernel.Shutdown)
+	// 先关闭http server，再关闭其他组件
+	shutdowns = append([]ShutdownFunc{kernel.Shutdown}, shutdowns...)
 
 	server := &server{
 		Server:    kernel,
