@@ -62,10 +62,6 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 		c.Set(ServiceNameKey, serviceName)
 		c.Next()
 	})
-	//默认的健康检查接口
-	engine.GET("/health", func(c *gin.Context) {
-		c.String(http.StatusOK, "ok")
-	})
 
 	// default true
 	if serverOptions.Pprof {
@@ -131,6 +127,11 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 	}
 	openApi := openapi.NewAPI(serviceName, openapiOpts...)
 	openApi.RegisterModel(openapi.ModelOf[Body[any]]())
+
+	//默认的健康检查接口
+	engine.GET("/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "ok")
+	})
 
 	kernel := &http.Server{
 		Handler: engine,
