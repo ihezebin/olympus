@@ -15,6 +15,15 @@ import (
 	"github.com/ihezebin/openapi"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/ihezebin/olympus/httpserver/internal"
 	"github.com/ihezebin/olympus/logger"
@@ -30,7 +39,7 @@ type server struct {
 
 type ShutdownFunc func(context.Context) error
 
-func NewServer(opts ...ServerOption) *server {
+func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 	serverOptions := mergeServerOptions(opts...)
 
 	// 隐藏路由日志
@@ -42,13 +51,6 @@ func NewServer(opts ...ServerOption) *server {
 	engine := gin.New()
 	// 中间件
 	engine.Use(serverOptions.Middlewares...)
-
-	shutdowns := make([]ShutdownFunc, 0)
-	if serverOptions.Otel {
-		shutdowns = append(shutdowns, serverOptions.OtelInit()...)
-		engine.Use(internal.OtelExtractTrace(serverOptions.ServiceName))
-		engine.Use(internal.OtelInjectTrace())
-	}
 
 	// 设置服务名称
 	serviceName := "olympus httpserver"
@@ -65,12 +67,57 @@ func NewServer(opts ...ServerOption) *server {
 		c.String(http.StatusOK, "ok")
 	})
 
+	// default true
+	if serverOptions.Pprof {
+		pprof.Register(engine)
+	}
+
+	shutdowns := make([]ShutdownFunc, 0)
+	// init otel
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		logger.WithError(err).Error(ctx, "otel error")
+	}))
+	// trace 解析
+	propagator := propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
+	otel.SetTextMapPropagator(propagator)
+	engine.Use(internal.OtelExtractTrace(serviceName))
+	engine.Use(internal.OtelInjectTrace())
+
+	otelResource := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName(serviceName),
+	)
+	// https://www.hezebin.com/article/67d1556324efba7f96725c83
+	if serverOptions.TraceExporter != nil {
+		tp := trace.NewTracerProvider(
+			trace.WithBatcher(serverOptions.TraceExporter),
+			trace.WithResource(otelResource),
+		)
+
+		otel.SetTracerProvider(tp)
+	}
+
+	// default true
 	if serverOptions.Metrics {
+		exporter, err := prometheus.New()
+		if err != nil {
+			return nil, errors.Wrap(err, "new prometheus exporter err")
+		}
+		mp := metric.NewMeterProvider(
+			metric.WithReader(exporter),
+			metric.WithResource(otelResource),
+		)
+		otel.SetMeterProvider(mp)
+
 		engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 
-	if serverOptions.Pprof {
-		pprof.Register(engine)
+	if serverOptions.LogProcessor != nil {
+		lp := log.NewLoggerProvider(
+			log.WithProcessor(serverOptions.LogProcessor),
+			log.WithResource(otelResource),
+		)
+		global.SetLoggerProvider(lp)
 	}
 
 	openapiOpts := make([]openapi.APIOpts, 0)
@@ -98,7 +145,7 @@ func NewServer(opts ...ServerOption) *server {
 		shutdowns: shutdowns,
 	}
 
-	return server
+	return server, nil
 }
 
 func (s *server) Name() string {
