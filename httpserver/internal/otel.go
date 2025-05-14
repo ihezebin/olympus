@@ -8,7 +8,18 @@ import (
 )
 
 func OtelExtractTrace(service string) gin.HandlerFunc {
-	return otelgin.Middleware(service)
+
+	return func(c *gin.Context) {
+		// 如果没有 traceId 则生成一个
+		ctx := c.Request.Context()
+		traceId := c.Request.Header.Get("traceparent")
+		if traceId == "" {
+			ctx, span := otel.GetTracerProvider().Tracer(service).Start(ctx, c.FullPath())
+			defer span.End()
+			c.Request = c.Request.WithContext(ctx)
+		}
+		otelgin.Middleware(service)(c)
+	}
 }
 
 func OtelInjectTrace() gin.HandlerFunc {
