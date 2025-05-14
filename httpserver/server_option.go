@@ -17,7 +17,7 @@ type ServerOptions struct {
 	Metrics         bool                  `json:"metrics" yaml:"metrics" toml:"metrics"`
 	Pprof           bool                  `json:"pprof" yaml:"pprof" toml:"pprof"`
 	OpenAPInfo      *openapi3.Info        `json:"openap_info" yaml:"openap_info" toml:"openap_info"`
-	OpenAPIServer   *openapi3.Server      `json:"openap_server" yaml:"openap_server" toml:"openap_server"`
+	OpenAPIServers  []openapi3.Server     `json:"openap_server" yaml:"openap_server" toml:"openap_server"`
 	Otel            bool                  `json:"otel_trace" yaml:"otel_trace" toml:"otel_trace"`
 	OtelInit        func() []ShutdownFunc `json:"otel_init" yaml:"otel_init" toml:"otel_init"`
 }
@@ -107,8 +107,8 @@ func WithOpenAPInfo(info openapi3.Info) ServerOption {
 	}
 }
 
-func WithOpenAPIServer(server openapi3.Server) ServerOption {
+func WithOpenAPIServer(server ...openapi3.Server) ServerOption {
 	return func(o *ServerOptions) {
-		o.OpenAPIServer = &server
+		o.OpenAPIServers = append(o.OpenAPIServers, server...)
 	}
 }

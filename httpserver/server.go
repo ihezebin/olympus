@@ -77,8 +77,8 @@ func NewServer(opts ...ServerOption) *server {
 	if serverOptions.OpenAPInfo != nil {
 		openapiOpts = append(openapiOpts, openapi.WithInfo(*serverOptions.OpenAPInfo))
 	}
-	if serverOptions.OpenAPIServer != nil {
-		openapiOpts = append(openapiOpts, openapi.WithServer(*serverOptions.OpenAPIServer))
+	if len(serverOptions.OpenAPIServers) > 0 {
+		openapiOpts = append(openapiOpts, openapi.WithServer(serverOptions.OpenAPIServers...))
 	}
 	openApi := openapi.NewAPI(serviceName, openapiOpts...)
 	openApi.RegisterModel(openapi.ModelOf[Body[any]]())
