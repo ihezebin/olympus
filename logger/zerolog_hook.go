@@ -7,6 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/global"
 )
 
 type zerologRotateHook struct {
@@ -16,7 +18,7 @@ type zerologRotateHook struct {
 
 var _ zerolog.Hook = &zerologRotateHook{}
 
-func newZerologRotateHook(logger zerolog.Logger, opt Options, config RotateConfig) (*zerologRotateHook, error) {
+func newZerologRotateHook(logger zerolog.Logger, config RotateConfig) (*zerologRotateHook, error) {
 	normalWriter, errWriter, err := newRotateWriter(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "new writer error")
@@ -51,7 +53,7 @@ type zerologLocalFsHook struct {
 
 var _ zerolog.Hook = &zerologLocalFsHook{}
 
-func newZerologLocalFsHook(logger zerolog.Logger, opt Options, config LocalFsConfig) *zerologLocalFsHook {
+func newZerologLocalFsHook(logger zerolog.Logger, config LocalFsConfig) *zerologLocalFsHook {
 	normalWriter, errWriter, err := newLocalFsWriter(config)
 	if err != nil {
 		panic(fmt.Sprintf("new local fs writer error: %s", err))
@@ -137,4 +139,54 @@ func newZerologCallerHook() zerolog.Hook {
 
 func (h *zerologCallerHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	e.Str(FieldKeyCaller, getCaller())
+}
+
+type zerologOtlpHook struct {
+	fields map[string]interface{}
+	err    error
+}
+
+var _ zerolog.Hook = &zerologOtlpHook{}
+
+func newZerologOtlpHook(fields map[string]interface{}, err error) zerolog.Hook {
+	return &zerologOtlpHook{
+		fields: fields,
+		err:    err,
+	}
+}
+
+func (h *zerologOtlpHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	otelogger := global.Logger("zerolog")
+	record := log.Record{}
+	attrs := make([]log.KeyValue, 0, len(h.fields))
+	for k, v := range h.fields {
+		attrs = append(attrs, log.String(k, fmt.Sprint(v)))
+	}
+	record.AddAttributes(attrs...)
+	record.SetTimestamp(zerolog.TimestampFunc())
+	record.SetSeverity(h.convertLevel2OtlpLevel(level))
+	record.SetSeverityText(level.String())
+	record.SetEventName(msg)
+	record.SetBody(log.StringValue(msg))
+
+	otelogger.Emit(e.GetCtx(), record)
+}
+
+func (h *zerologOtlpHook) convertLevel2OtlpLevel(level zerolog.Level) log.Severity {
+	switch level {
+	case zerolog.DebugLevel:
+		return log.SeverityDebug
+	case zerolog.InfoLevel:
+		return log.SeverityInfo
+	case zerolog.WarnLevel:
+		return log.SeverityWarn
+	case zerolog.ErrorLevel:
+		return log.SeverityError
+	case zerolog.FatalLevel:
+		return log.SeverityFatal
+	case zerolog.PanicLevel:
+		return log.SeverityFatal
+	default:
+		return log.SeverityUndefined
+	}
 }

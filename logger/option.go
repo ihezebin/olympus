@@ -26,6 +26,8 @@ type Options struct {
 	// GetTraceId is a function to get the trace_id
 	// 默认实现使用 opentelemetry 的 trace_id
 	GetTraceIdFunc func(ctx context.Context) string
+	// OtlpEnabled 是否启用 otlp
+	OtlpEnabled bool
 }
 
 type LocalFsConfig struct {
@@ -68,6 +70,12 @@ func defaultOptions() *Options {
 }
 
 type Option func(*Options)
+
+func WithOtlpEnabled(enabled bool) Option {
+	return func(o *Options) {
+		o.OtlpEnabled = enabled
+	}
+}
 
 func WithOutput(w io.Writer) Option {
 	return func(o *Options) {

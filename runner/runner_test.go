@@ -30,6 +30,11 @@ func TestRunner(t *testing.T) {
 		process.Signal(syscall.SIGINT)
 	}()
 
-	runner := NewRunner(httpserver.NewServer())
+	server, err := httpserver.NewServer(context.Background())
+	if err != nil {
+		t.Fatal("Failed to create server:", err)
+	}
+
+	runner := NewRunner(server)
 	runner.Run(context.Background())
 }

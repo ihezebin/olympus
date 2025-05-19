@@ -10,7 +10,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/log/global"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 func TestLogger(t *testing.T) {
@@ -31,26 +36,47 @@ func TestLogger(t *testing.T) {
 
 func TestLoggerWithTraceId(t *testing.T) {
 	ctx := context.Background()
-	// 配置 TracerProvider
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		t.Errorf("OTEL ERROR: %v", err)
+	}))
 	tp := trace.NewTracerProvider()
 	otel.SetTracerProvider(tp)
-	defer tp.Shutdown(ctx)
+	exporter, err := otlploghttp.New(ctx,
+		otlploghttp.WithInsecure(),
+		otlploghttp.WithEndpoint("localhost:4318"),
+	)
+	if err != nil {
+		t.Fatalf("无法创建 OTLP log HTTP exporter: %v", err)
+	}
+
+	res := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("test_logger_with_trace_id"),
+	)
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+		sdklog.WithResource(res),
+	)
+	global.SetLoggerProvider(provider)
+
 	// 获取 Tracer
 	tracer := otel.Tracer("github.com/ihezebin/olympus/logger")
 	ctx, span := tracer.Start(ctx, "unit_test")
 	defer span.End()
 
-	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"))
+	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"), WithOtlpEnabled(true))
 	logrusLogger.Info(ctx, "hello")
 
-	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"))
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"), WithOtlpEnabled(true))
 	zerologLogger.Info(ctx, "hello")
 
-	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"))
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"), WithOtlpEnabled(true))
 	slogLogger.Info(ctx, "hello")
 
-	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"), WithOtlpEnabled(true))
 	zapLogger.Info(ctx, "hello")
+
+	time.Sleep(10 * time.Second)
 }
 
 func TestLoggerError(t *testing.T) {

@@ -3,8 +3,6 @@ package logger
 import (
 	"context"
 	"fmt"
-
-	"github.com/rs/zerolog"
 )
 
 type Level string
@@ -99,7 +97,7 @@ func New(opts ...Option) Logger {
 	case LoggerTypeLogrus:
 		l = newLogrusLogger(*options)
 	case LoggerTypeZerolog:
-		l = newZerologLogger(zerolog.New(options.Output), *options)
+		l = newDefaultZerologLogger(*options)
 	case LoggerTypeZap:
 		l = newZapLogger(*options)
 	case LoggerTypeSlog:

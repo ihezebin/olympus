@@ -6,6 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/global"
 )
 
 type slogHook struct {
@@ -14,6 +16,7 @@ type slogHook struct {
 	opt                                     Options
 	rotateNormalHandler, rotateErrHandler   slog.Handler
 	localFsNormalHandler, localFsErrHandler slog.Handler
+	otlpAttrs                               []slog.Attr
 }
 
 var _ slog.Handler = &slogHook{}
@@ -24,6 +27,7 @@ func newSlogHook(handler slog.Handler, handlerOpts *slog.HandlerOptions, opt Opt
 		handler:     handler,
 		handlerOpts: handlerOpts,
 		opt:         opt,
+		otlpAttrs:   make([]slog.Attr, 0),
 	}
 
 	if opt.LocalFsConfig.Path != "" {
@@ -56,6 +60,7 @@ func (h *slogHook) WithAttrs(attrs []slog.Attr) slog.Handler {
 		handler:     newHandler,
 		handlerOpts: h.handlerOpts,
 		opt:         h.opt,
+		otlpAttrs:   append(h.otlpAttrs, attrs...),
 	}
 
 	if h.rotateNormalHandler != nil {
@@ -84,6 +89,7 @@ func (h *slogHook) WithGroup(name string) slog.Handler {
 		handler:     newHandler,
 		handlerOpts: h.handlerOpts,
 		opt:         h.opt,
+		otlpAttrs:   h.otlpAttrs,
 	}
 
 	if h.rotateNormalHandler != nil {
@@ -130,37 +136,72 @@ func (h *slogHook) Handle(ctx context.Context, r slog.Record) error {
 		}
 	}
 
-	if h.opt.RotateConfig.Path != "" {
-		var handler slog.Handler
+	if h.rotateNormalHandler != nil || h.rotateErrHandler != nil {
+		var rotateHandler slog.Handler
 		if r.Level >= levelToSlogLevel(h.opt.RotateConfig.ErrorFileLevel) {
-			handler = h.rotateErrHandler
+			rotateHandler = h.rotateErrHandler
 		} else {
-			handler = h.rotateNormalHandler
+			rotateHandler = h.rotateNormalHandler
 		}
 
-		if handler != nil {
-			err := handler.Handle(ctx, r)
+		if rotateHandler != nil {
+			err := rotateHandler.Handle(ctx, r)
 			if err != nil {
 				return errors.Wrapf(err, "slog rotate handle error")
 			}
 		}
 	}
 
-	if h.opt.LocalFsConfig.Path != "" {
-		var handler slog.Handler
+	if h.localFsNormalHandler != nil || h.localFsErrHandler != nil {
+		var localFsHandler slog.Handler
 		if r.Level >= levelToSlogLevel(h.opt.LocalFsConfig.ErrorFileLevel) {
-			handler = h.localFsErrHandler
+			localFsHandler = h.localFsErrHandler
 		} else {
-			handler = h.localFsNormalHandler
+			localFsHandler = h.localFsNormalHandler
 		}
 
-		if handler != nil {
-			err := handler.Handle(ctx, r)
+		if localFsHandler != nil {
+			err := localFsHandler.Handle(ctx, r)
 			if err != nil {
 				return errors.Wrapf(err, "slog local fs handle error")
 			}
 		}
 	}
 
+	if h.opt.OtlpEnabled {
+		otelogger := global.Logger("slog")
+		record := log.Record{}
+
+		attrs := make([]log.KeyValue, 0, len(h.otlpAttrs))
+		for _, attr := range h.otlpAttrs {
+			attrs = append(attrs, log.String(attr.Key, fmt.Sprint(attr.Value.String())))
+		}
+		record.AddAttributes(attrs...)
+		record.SetTimestamp(r.Time)
+		record.SetSeverity(h.convertLevel2OtlpLevel(r.Level))
+		record.SetSeverityText(r.Level.String())
+		record.SetEventName(r.Level.String())
+		record.SetBody(log.StringValue(r.Message))
+
+		// Collector 默认路径 "/v1/logs"，格式：
+		// collectLogs "go.opentelemetry.io/proto/otlp/collector/logs/v1" collectLogs.ExportLogsServiceRequest
+		otelogger.Emit(ctx, record)
+	}
+
 	return h.handler.Handle(ctx, r)
+}
+
+func (h *slogHook) convertLevel2OtlpLevel(level slog.Level) log.Severity {
+	switch level {
+	case slog.LevelDebug:
+		return log.SeverityDebug
+	case slog.LevelInfo:
+		return log.SeverityInfo
+	case slog.LevelWarn:
+		return log.SeverityWarn
+	case slog.LevelError:
+		return log.SeverityError
+	default:
+		return log.SeverityUndefined
+	}
 }

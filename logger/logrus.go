@@ -59,6 +59,10 @@ func newLogrusLogger(opt Options) *logrusLogger {
 		logger.AddHook(hook)
 	}
 
+	if opt.OtlpEnabled {
+		logger.AddHook(newLogrusOtlpHook())
+	}
+
 	return &logrusLogger{
 		Logger: logger,
 		Entry:  logrus.NewEntry(logger),

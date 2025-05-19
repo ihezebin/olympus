@@ -14,11 +14,16 @@ type zapLogger struct {
 	Logger *zap.Logger
 	Fields []zap.Field
 	Opt    Options
+	ctx    context.Context
 }
 
 var _ Logger = &zapLogger{}
 
 func newZapLogger(opt Options) *zapLogger {
+	return newZapLoggerWithContext(context.TODO(), opt)
+}
+
+func newZapLoggerWithContext(ctx context.Context, opt Options) *zapLogger {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.TimeKey = FieldKeyTime
 	encoderConfig.MessageKey = FieldKeyMsg
@@ -41,10 +46,11 @@ func newZapLogger(opt Options) *zapLogger {
 
 	// 创建基础 core
 	core := zapcore.NewCore(encoder, ws, level)
-	hook := newZapHook(core, encoder, opt)
+	hook := newZapHook(ctx, core, encoder, opt)
 	logger := zap.New(hook)
 
 	return &zapLogger{
+		ctx:    ctx,
 		Logger: logger,
 		Opt:    opt,
 	}
@@ -69,43 +75,35 @@ func levelToZapLevel(level Level) zapcore.Level {
 	}
 }
 
-func (l *zapLogger) withContext(ctx context.Context) *zap.Logger {
-	fields := make([]zap.Field, 0)
-	if l.Opt.GetTraceIdFunc != nil {
-		traceId := l.Opt.GetTraceIdFunc(ctx)
-		if traceId != "" {
-			fields = append(fields, zap.Any(FieldKeyTraceId, traceId))
-		}
-	}
-	l.Logger = l.Logger.With(fields...)
-	return l.Logger
+func (l *zapLogger) withContext(ctx context.Context) *zapLogger {
+	return newZapLoggerWithContext(ctx, l.Opt)
 }
 
 func (l *zapLogger) WithError(err error) Logger {
+	return l.withFileds(zap.Error(err))
+}
+
+func (l *zapLogger) withFileds(fields ...zap.Field) *zapLogger {
 	newFields := make([]zap.Field, 0)
 	newFields = append(newFields, l.Fields...)
-	newFields = append(newFields, zap.Error(err))
-	return &zapLogger{Logger: l.Logger, Fields: newFields}
+	newFields = append(newFields, fields...)
+	return &zapLogger{Logger: l.Logger, Fields: newFields, ctx: l.ctx, Opt: l.Opt}
 }
 
 func (l *zapLogger) WithField(key string, value interface{}) Logger {
-	newFields := make([]zap.Field, 0)
-	newFields = append(newFields, l.Fields...)
-	newFields = append(newFields, zap.Any(key, value))
-	return &zapLogger{Logger: l.Logger, Fields: newFields}
+	return l.withFileds(zap.Any(key, value))
 }
 
 func (l *zapLogger) WithFields(fields map[string]interface{}) Logger {
 	newFields := make([]zap.Field, 0, len(fields))
-	newFields = append(newFields, l.Fields...)
 	for k, v := range fields {
 		newFields = append(newFields, zap.Any(k, v))
 	}
-	return &zapLogger{Logger: l.Logger, Fields: newFields}
+	return l.withFileds(newFields...)
 }
 
 func (l *zapLogger) Log(ctx context.Context, level Level, args ...interface{}) {
-	l.withContext(ctx).Log(levelToZapLevel(level), fmt.Sprint(args...), l.Fields...)
+	l.withContext(ctx).Logger.Log(levelToZapLevel(level), fmt.Sprint(args...), l.Fields...)
 }
 
 func (l *zapLogger) Trace(ctx context.Context, args ...interface{}) {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/global"
 )
 
 type logrusLocalFsHook struct {
@@ -176,4 +178,58 @@ func (h *logrusTraceIdHook) Fire(entry *logrus.Entry) error {
 		entry.Data[FieldKeyTraceId] = traceId
 	}
 	return nil
+}
+
+type logrusOtlpHook struct{}
+
+var _ logrus.Hook = &logrusOtlpHook{}
+
+func newLogrusOtlpHook() *logrusOtlpHook {
+	return &logrusOtlpHook{}
+}
+
+func (h *logrusOtlpHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *logrusOtlpHook) Fire(entry *logrus.Entry) error {
+	otelogger := global.Logger("logrus")
+	record := log.Record{}
+
+	attrs := make([]log.KeyValue, 0, len(entry.Data))
+	for k, v := range entry.Data {
+		attrs = append(attrs, log.String(k, fmt.Sprint(v)))
+	}
+	record.AddAttributes(attrs...)
+	record.SetTimestamp(entry.Time)
+	record.SetSeverity(h.convertLevel(entry.Level))
+	record.SetSeverityText(entry.Level.String())
+	record.SetEventName(entry.Level.String())
+	record.SetBody(log.StringValue(entry.Message))
+
+	// Collector 默认路径 "/v1/logs"，格式：
+	// collectLogs "go.opentelemetry.io/proto/otlp/collector/logs/v1" collectLogs.ExportLogsServiceRequest
+	otelogger.Emit(entry.Context, record)
+	return nil
+}
+
+func (h *logrusOtlpHook) convertLevel(level logrus.Level) log.Severity {
+	switch level {
+	case logrus.PanicLevel:
+		return log.SeverityFatal
+	case logrus.FatalLevel:
+		return log.SeverityFatal
+	case logrus.ErrorLevel:
+		return log.SeverityError
+	case logrus.WarnLevel:
+		return log.SeverityWarn
+	case logrus.InfoLevel:
+		return log.SeverityInfo
+	case logrus.DebugLevel:
+		return log.SeverityDebug
+	case logrus.TraceLevel:
+		return log.SeverityTrace
+	default:
+		return log.SeverityUndefined
+	}
 }

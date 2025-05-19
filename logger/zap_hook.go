@@ -1,14 +1,18 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log/global"
 	"go.uber.org/zap/zapcore"
 )
 
 type zapHook struct {
+	ctx                                   context.Context
 	core                                  zapcore.Core
 	opt                                   Options
 	rotateNormalWriter, rotateErrWriter   io.Writer
@@ -18,8 +22,8 @@ type zapHook struct {
 
 var _ zapcore.Core = &zapHook{}
 
-func newZapHook(core zapcore.Core, encoder zapcore.Encoder, opt Options) *zapHook {
-	hook := &zapHook{core: core, encoder: encoder, opt: opt}
+func newZapHook(ctx context.Context, core zapcore.Core, encoder zapcore.Encoder, opt Options) *zapHook {
+	hook := &zapHook{ctx: ctx, core: core, encoder: encoder, opt: opt}
 
 	if opt.LocalFsConfig.Path != "" {
 		normalWriter, errWriter, err := newLocalFsWriter(opt.LocalFsConfig)
@@ -44,6 +48,7 @@ func newZapHook(core zapcore.Core, encoder zapcore.Encoder, opt Options) *zapHoo
 func (h *zapHook) With(fields []zapcore.Field) zapcore.Core {
 	newCore := h.core.With(fields)
 	return &zapHook{
+		ctx:                h.ctx,
 		core:               newCore,
 		opt:                h.opt,
 		rotateNormalWriter: h.rotateNormalWriter,
@@ -88,6 +93,17 @@ func (h *zapHook) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		})
 	}
 
+	if h.opt.GetTraceIdFunc != nil {
+		traceId := h.opt.GetTraceIdFunc(h.ctx)
+		if traceId != "" {
+			newFields = append(newFields, zapcore.Field{
+				Key:    FieldKeyTraceId,
+				Type:   zapcore.StringType,
+				String: traceId,
+			})
+		}
+	}
+
 	if h.opt.RotateConfig.Path != "" {
 		var writer io.Writer
 		if entry.Level >= levelToZapLevel(h.opt.RotateConfig.ErrorFileLevel) {
@@ -128,13 +144,54 @@ func (h *zapHook) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 		}
 	}
 
+	if h.opt.OtlpEnabled {
+		otelogger := global.Logger("zap")
+		record := log.Record{}
+
+		attrs := make([]log.KeyValue, 0, len(newFields))
+		for _, field := range newFields {
+			attrs = append(attrs, log.String(field.Key, fmt.Sprint(field.String)))
+		}
+		record.AddAttributes(attrs...)
+		record.SetTimestamp(entry.Time)
+		record.SetSeverity(h.convertLevel2OtlpLevel(entry.Level))
+		record.SetSeverityText(entry.Level.String())
+		record.SetEventName(entry.Level.String())
+		record.SetBody(log.StringValue(entry.Message))
+
+		ctx := h.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		otelogger.Emit(ctx, record)
+	}
+
 	return h.core.Write(entry, newFields)
 }
 
 func (h *zapHook) Enabled(level zapcore.Level) bool {
-	return true
+	return h.core.Enabled(level)
 }
 
 func (h *zapHook) Sync() error {
 	return h.core.Sync()
+}
+
+func (h *zapHook) convertLevel2OtlpLevel(level zapcore.Level) log.Severity {
+	switch level {
+	case zapcore.DebugLevel:
+		return log.SeverityDebug
+	case zapcore.InfoLevel:
+		return log.SeverityInfo
+	case zapcore.WarnLevel:
+		return log.SeverityWarn
+	case zapcore.ErrorLevel:
+		return log.SeverityError
+	case zapcore.FatalLevel:
+		return log.SeverityFatal
+	case zapcore.PanicLevel:
+		return log.SeverityFatal
+	default:
+		return log.SeverityUndefined
+	}
 }
