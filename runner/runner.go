@@ -25,8 +25,17 @@ func NewRunner(tasks ...Task) *Runner {
 	return &Runner{tasks: tasks}
 }
 
-// Run 阻塞运行，直到其中一个任务停止或收到 SIGTERM, SIGQUIT, SIGINT 信号
+// Run 阻塞运行，直到收到 SIGTERM, SIGQUIT, SIGINT 信号
 func (r *Runner) Run(ctx context.Context) {
+	r.run(ctx, false)
+}
+
+// RunWithOneStop 阻塞运行，直到收到 SIGTERM, SIGQUIT, SIGINT 信号，或者其中一个任务意外停止
+func (r *Runner) RunWithOneStop(ctx context.Context) {
+	r.run(ctx, true)
+}
+
+func (r *Runner) run(ctx context.Context, oneStop bool) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	ch := make(chan os.Signal, 1)
@@ -52,10 +61,13 @@ func (r *Runner) Run(ctx context.Context) {
 			logger.Infof(ctx, "task(%s) is starting", task.Name())
 			if err := task.Run(ctx); err != nil {
 				logger.Errorf(ctx, "task(%s) run with error(%v)", task.Name(), err)
+				// one task stop, cancel the context to stop all other tasks.
+				if oneStop {
+					logger.Infof(ctx, "task(%s) err, will cancel all tasks", task.Name())
+					cancel()
+				}
 			}
 			logger.Infof(ctx, "task(%s) is stopped", task.Name())
-			// one task stop, cancel the context to stop all other tasks.
-			cancel()
 		}(t)
 	}
 	wg.Wait()
