@@ -78,6 +78,7 @@ func (r *openapiRouter) handle(method string, path string, h handlerGenerator, r
 	operationID := strings.ReplaceAll(path, "/", "_")
 	operationID = strings.TrimLeft(operationID, "_")
 	operationID = strings.TrimRight(operationID, "_")
+	operationID = method + "_" + operationID
 
 	route.HasOperationID(operationID)
 
