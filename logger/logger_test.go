@@ -198,6 +198,53 @@ func BenchmarkLogger(b *testing.B) {
 		})
 	})
 
+	// 测试是否开启 otlp 的性能差异
+	b.Run("otlp/enabled", func(b *testing.B) {
+		otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		}))
+		tp := trace.NewTracerProvider()
+		otel.SetTracerProvider(tp)
+		exporter, err := otlploghttp.New(ctx,
+			otlploghttp.WithInsecure(),
+			otlploghttp.WithEndpoint("localhost:4318"),
+		)
+		if err != nil {
+			b.Fatalf("无法创建 OTLP log HTTP exporter: %v", err)
+		}
+
+		res := resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName("test_logger_with_trace_id"),
+		)
+		provider := sdklog.NewLoggerProvider(
+			sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+			sdklog.WithResource(res),
+		)
+		global.SetLoggerProvider(provider)
+
+		// 获取 Tracer
+		tracer := otel.Tracer("github.com/ihezebin/olympus/logger")
+		ctx, span := tracer.Start(ctx, "unit_test")
+		defer span.End()
+		b.Run("default", func(b *testing.B) {
+			logrusLogger := New(append(noOutputOpts, WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))...)
+			b.ResetTimer()
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				logrusLogger.Info(ctx, "hello")
+			}
+		})
+
+		b.Run("otlp", func(b *testing.B) {
+			logrusLogger := New(append(noOutputOpts, WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"), WithOtlpEnabled(true))...)
+			b.ResetTimer()
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				logrusLogger.Info(ctx, "hello")
+			}
+		})
+	})
+
 }
 
 func TestLoggerWithLocalFs(t *testing.T) {

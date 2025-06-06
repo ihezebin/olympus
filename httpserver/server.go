@@ -175,9 +175,9 @@ type RegisterRoutes interface {
 func (s *server) RegisterRoutes(routers ...RegisterRoutes) {
 	for _, router := range routers {
 		router.RegisterRoutes(&openapiRouter{
-			router:  s.engine,
-			openapi: s.openapi,
-			prefix:  "",
+			ginRouter: s.engine,
+			openapi:   s.openapi,
+			prefix:    "",
 		})
 	}
 }
