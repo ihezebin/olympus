@@ -43,9 +43,19 @@ func NewWithFilePath(path string, opts ...Option) *Config {
 			workFilePath := filepath.Join(workPath, path)
 			filePaths = append(filePaths, workFilePath)
 		}
+
+		execPath, err := os.Executable()
+		if err == nil {
+			execPath := filepath.Dir(execPath)
+			execFilePath := filepath.Join(execPath, path)
+			filePaths = append(filePaths, execFilePath)
+		}
+
 		appPath := filepath.Dir(os.Args[0])
-		appFilePath := filepath.Join(appPath, path)
-		filePaths = append(filePaths, appFilePath)
+		if appPath != execPath {
+			appFilePath := filepath.Join(appPath, path)
+			filePaths = append(filePaths, appFilePath)
+		}
 	} else {
 		filePaths = append(filePaths, path)
 	}
