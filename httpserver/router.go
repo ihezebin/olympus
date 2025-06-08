@@ -27,12 +27,17 @@ type Router interface {
 	OptionsWithOptions(string, handlerGenerator, ...RouterOption)
 	HEAD(string, handlerGenerator, ...OpenAPIOption)
 	HeadWithOptions(string, handlerGenerator, ...RouterOption)
+	Kernel() gin.IRouter
 }
 
 type openapiRouter struct {
 	prefix    string
 	ginRouter gin.IRouter
 	openapi   *openapi.API
+}
+
+func (r *openapiRouter) Kernel() gin.IRouter {
+	return r.ginRouter
 }
 
 func (r *openapiRouter) Group(prefixes ...string) Router {
