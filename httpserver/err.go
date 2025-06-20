@@ -81,8 +81,9 @@ func ErrorWithBadRequest() *Err {
 }
 func ErrorWithInternalServer() *Err {
 	return &Err{
-		Code: CodeInternalServerError,
-		Err:  errors.New(code2MessageM[CodeInternalServerError]),
+		Status: http.StatusInternalServerError,
+		Code:   CodeInternalServerError,
+		Err:    errors.New(code2MessageM[CodeInternalServerError]),
 	}
 }
 

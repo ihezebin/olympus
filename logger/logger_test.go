@@ -21,17 +21,17 @@ import (
 func TestLogger(t *testing.T) {
 	ctx := context.Background()
 
-	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"))
-	logrusLogger.Info(ctx, "hello")
+	logrusLogger := New(WithLoggerType(LoggerTypeLogrus), WithServiceName("unit_test"), WithLevel(LevelDebug))
+	logrusLogger.Debug(ctx, "hello")
 
-	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"))
-	zerologLogger.Info(ctx, "hello")
+	zerologLogger := New(WithLoggerType(LoggerTypeZerolog), WithServiceName("unit_test"), WithLevel(LevelDebug))
+	zerologLogger.Debug(ctx, "hello")
 
-	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"))
-	slogLogger.Info(ctx, "hello")
+	slogLogger := New(WithLoggerType(LoggerTypeSlog), WithServiceName("unit_test"), WithLevel(LevelDebug))
+	slogLogger.Debug(ctx, "hello")
 
-	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"))
-	zapLogger.Info(ctx, "hello")
+	zapLogger := New(WithLoggerType(LoggerTypeZap), WithServiceName("unit_test"), WithLevel(LevelDebug))
+	zapLogger.Debug(ctx, "hello")
 }
 
 func TestLoggerWithTraceId(t *testing.T) {
