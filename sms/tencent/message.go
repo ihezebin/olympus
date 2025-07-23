@@ -1,9 +1,5 @@
 package tencent
 
-import (
-	"strconv"
-)
-
 type Message struct {
 	//SmsSdkAppId 短信应用ID: 短信SdkAppId在 [短信控制台] 添加应用后生成的实际SdkAppId，示例如1400006666
 	SmsSdkAppId string `mapstructure:"sms_sdk_app_id" json:"sms_sdk_app_id"`
@@ -25,13 +21,9 @@ func NewMessage() *Message {
 	return &Message{}
 }
 
-func (msg *Message) WithTemplate(id string, params ...int) *Message {
-	paramSet := make([]string, 0, len(params))
-	for _, param := range params {
-		paramSet = append(paramSet, strconv.Itoa(param))
-	}
+func (msg *Message) WithTemplate(id string, params ...string) *Message {
 	msg.TemplateId = id
-	msg.TemplateParamSet = paramSet
+	msg.TemplateParamSet = params
 	return msg
 }
 
