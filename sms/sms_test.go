@@ -29,14 +29,14 @@ func TestTencentSms(t *testing.T) {
 
 func TestAliyunSms(t *testing.T) {
 	client, err := aliyun.NewClient(aliyun.Config{
-		AccessKeyId:     "",
-		AccessKeySecret: "",
+		AccessKeyId:     "LTAI5tBPxxxxxpR9tx3vKu",
+		AccessKeySecret: "xpgKc4fBxxxxx356HFabhw3T",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := aliyun.NewMessage().WithSignName("sign").WithTemplate("code", make(map[string]interface{}))
-	err = client.Send(context.Background(), msg, "13518468111")
+	msg := aliyun.NewMessage().WithSignName("河泽冰").WithTemplate("SMxxxx1310230", map[string]interface{}{"code": "123456"})
+	err = client.Send(context.Background(), msg, "+86135xxxx1111")
 	if err != nil {
 		t.Fatal(err)
 	}

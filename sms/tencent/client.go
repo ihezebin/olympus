@@ -2,7 +2,6 @@ package tencent
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -115,7 +114,7 @@ func (client *Client) Send(ctx context.Context, msg *Message, telephones ...stri
 		}
 	}
 	if len(failedInfos) > 0 {
-		return failedInfos, errors.New(fmt.Sprintf("send sms to some phones failed. detail in failedInfos"))
+		return failedInfos, errors.New("send sms to some phones failed. detail in failedInfos")
 	}
 
 	return nil, nil

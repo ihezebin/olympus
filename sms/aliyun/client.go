@@ -54,9 +54,11 @@ func (client *Client) Send(ctx context.Context, msg *Message, telephones ...stri
 	}
 	// 复制代码运行请自行打印 API 的返回值
 	response, err := client.kernel.SendSms(request)
-	_ = response
 	if err != nil {
-		return err
+		return errors.Wrap(err, "send sms failed")
+	}
+	if *response.Body.Code != "OK" {
+		return errors.New(*response.Body.Message)
 	}
 	return nil
 }
