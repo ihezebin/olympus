@@ -11,7 +11,7 @@ import (
 	"github.com/ihezebin/olympus/logger"
 )
 
-const maxBodyLen = 1024
+const maxBodyLen = 1024 * 2
 
 func LoggingRequest() gin.HandlerFunc {
 	return generateLoggingRequest(true)
@@ -54,7 +54,7 @@ func requestBody(c *gin.Context) string {
 	if bodySize > maxBodyLen {
 		bodySize = maxBodyLen
 	}
-	return string(bodyData[:bodySize])
+	return string(bodyData[:bodySize]) + "..."
 }
 
 func LoggingResponse() gin.HandlerFunc {
@@ -90,7 +90,7 @@ func responseBody(rw *responseWriter) string {
 	if bodyLen > maxBodyLen {
 		bodyLen = maxBodyLen
 	}
-	return string(body[:bodyLen])
+	return string(body[:bodyLen]) + "..."
 }
 
 type responseWriter struct {
