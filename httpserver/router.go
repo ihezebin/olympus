@@ -77,6 +77,12 @@ func (r *openapiRouter) handle(method string, path string, h handlerGenerator, r
 
 	// handle openapi path
 	path = r.mergePath(r.prefix, path)
+
+	// handle path register
+	if routerOptions.PathRegister != nil {
+		routerOptions.PathRegister(path)
+	}
+
 	// handle openapi route
 	route := r.openapi.Route(method, path)
 	route = mergeOpenAPIOptions(route, routerOptions.OpenAPIOptions...)
