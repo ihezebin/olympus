@@ -51,10 +51,12 @@ func requestBody(c *gin.Context) string {
 	c.Request.Body = io.NopCloser(bytes.NewReader(bodyData))
 
 	bodySize := len(bodyData)
+	bodySuffix := ""
 	if bodySize > maxBodyLen {
 		bodySize = maxBodyLen
+		bodySuffix = "..."
 	}
-	return string(bodyData[:bodySize]) + "..."
+	return string(bodyData[:bodySize]) + bodySuffix
 }
 
 func LoggingResponse() gin.HandlerFunc {
