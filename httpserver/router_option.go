@@ -6,7 +6,7 @@ type RouterOptions struct {
 	PreMiddlewares  []gin.HandlerFunc
 	PostMiddlewares []gin.HandlerFunc
 	OpenAPIOptions  OpenAPIOptions
-	PathRegister    func(path string)
+	PathRegister    func(method, path string)
 }
 
 type RouterOption func(*RouterOptions)
@@ -37,7 +37,7 @@ func WithOpenAPIOptions(opts ...OpenAPIOption) RouterOption {
 	}
 }
 
-func WithPathRegister(pathRegister func(path string)) RouterOption {
+func WithPathRegister(pathRegister func(method, path string)) RouterOption {
 	return func(options *RouterOptions) {
 		options.PathRegister = pathRegister
 	}

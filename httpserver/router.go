@@ -80,7 +80,7 @@ func (r *openapiRouter) handle(method string, path string, h handlerGenerator, r
 
 	// handle path register
 	if routerOptions.PathRegister != nil {
-		routerOptions.PathRegister(path)
+		routerOptions.PathRegister(method, path)
 	}
 
 	// handle openapi route
