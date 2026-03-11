@@ -17,7 +17,12 @@ func Recovery() gin.HandlerFunc {
 				// Print error and stack information
 				logger.Errorf(ctx, "panic: %v", err)
 				logger.Errorf(ctx, "stack: %s", debug.Stack())
-				c.AbortWithStatus(http.StatusInternalServerError)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]interface{}{
+					"code":    10000,
+					"message": "Internal Server Error",
+					"data":    nil,
+					"panic":   true,
+				})
 			}
 		}()
 		c.Next()
