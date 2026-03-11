@@ -140,3 +140,22 @@ func WithServiceName(serviceName string) Option {
 		o.ServiceName = serviceName
 	}
 }
+
+/*
+	func(ctx context.Context) string {
+				spanCtx := trace.SpanContextFromContext(ctx)
+				if spanCtx.IsValid() {
+					return spanCtx.TraceID().String()
+				}
+				tr := otel.Tracer(conf.ServiceName)
+				ctx, span := tr.Start(ctx, "generate-new-trace-id")
+				defer span.End()
+				traceID := span.SpanContext().TraceID().String()
+				return traceID
+			}
+*/
+func WithGetTraceIdFunc(fn func(ctx context.Context) string) Option {
+	return func(o *Options) {
+		o.GetTraceIdFunc = fn
+	}
+}
