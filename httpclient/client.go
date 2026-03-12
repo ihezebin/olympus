@@ -33,5 +33,9 @@ func NewClient(opts ...Option) *resty.Client {
 	if options.Otel {
 		c.OnBeforeRequest(OtelMiddleware())
 	}
+
+	if options.Debug {
+		c.SetDebug(true)
+	}
 	return c
 }

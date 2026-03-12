@@ -6,6 +6,7 @@ type Options struct {
 	Otel    bool
 	Host    string
 	Timeout time.Duration
+	Debug   bool
 }
 
 type Option func(*Options)
@@ -15,6 +16,7 @@ func mergeOptions(opts ...Option) *Options {
 		Otel:    true,
 		Host:    "",
 		Timeout: 10 * time.Second,
+		Debug:   false,
 	}
 	for _, opt := range opts {
 		opt(options)
@@ -37,5 +39,11 @@ func WithHost(host string) Option {
 func WithTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = timeout
+	}
+}
+
+func WithDebug(debug bool) Option {
+	return func(o *Options) {
+		o.Debug = debug
 	}
 }
