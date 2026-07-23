@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -44,10 +45,14 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 		requestPtr := new(RequestT)
 		if isRequestStruct { // 如果是结构体可自由绑定
 			if err = c.ShouldBind(requestPtr); err != nil {
-				logger.WithError(err).Errorf(ctx, "failed to bind, uri: %s", c.Request.RequestURI)
-				body = body.WithErr(ErrorWithInternalServer())
-				c.PureJSON(body.status, body)
-				return
+				// DELETE 等带 Content-Type: application/json 但无 body 时，Gin 选 JSON 绑定器，
+				// 空 body 解码会返回 EOF；此时忽略并继续 ShouldBindUri / ShouldBindHeader。
+				if !errors.Is(err, io.EOF) {
+					logger.WithError(err).Errorf(ctx, "failed to bind, uri: %s", c.Request.RequestURI)
+					body = body.WithErr(ErrorWithInternalServer())
+					c.PureJSON(body.status, body)
+					return
+				}
 			}
 		} else { // 如果是 map 则优先从 body 读, 如果 body 为空则从 query 读
 			if err = c.ShouldBindWith(requestPtr, mapBinding{}); err != nil {
