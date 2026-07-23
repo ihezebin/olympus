@@ -26,7 +26,7 @@ type ServerOption func(*ServerOptions)
 func mergeServerOptions(opts ...ServerOption) *ServerOptions {
 	opt := &ServerOptions{
 		Port:    8080,
-		Pprof:   true,
+		Pprof:   false,
 		Metrics: true,
 	}
 	for _, o := range opts {

@@ -88,11 +88,13 @@ func generateLoggingResponse(header bool) gin.HandlerFunc {
 
 func responseBody(rw *responseWriter) string {
 	body := rw.Body.Bytes()
-	bodyLen := len(body)
-	if bodyLen > maxBodyLen {
-		bodyLen = maxBodyLen
+	bodySize := len(body)
+	bodySuffix := ""
+	if bodySize > maxBodyLen {
+		bodySize = maxBodyLen
+		bodySuffix = "..."
 	}
-	return string(body[:bodyLen]) + "..."
+	return string(body[:bodySize]) + bodySuffix
 }
 
 type responseWriter struct {
@@ -101,8 +103,11 @@ type responseWriter struct {
 }
 
 func (w responseWriter) Write(body []byte) (int, error) {
-	// store body
 	w.Body.Write(body)
-	// write
 	return w.ResponseWriter.Write(body)
+}
+
+func (w responseWriter) WriteString(s string) (int, error) {
+	w.Body.WriteString(s)
+	return w.ResponseWriter.WriteString(s)
 }

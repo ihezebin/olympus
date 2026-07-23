@@ -63,7 +63,7 @@ func NewServer(ctx context.Context, opts ...ServerOption) (*server, error) {
 		c.Next()
 	})
 
-	// default true
+	// default false，生产环境需显式 WithPprof() 开启
 	if serverOptions.Pprof {
 		pprof.Register(engine)
 	}
@@ -183,7 +183,8 @@ func (s *server) RegisterRoutes(routers ...RegisterRoutes) {
 }
 
 func (s *server) RegisterOpenAPIUI(path string, ui OpenAPIUIBuilder) error {
-	if path == "" {
+	path = joinHTTPPaths(path)
+	if path == "/" {
 		path = "/openapi"
 	}
 	spec, err := s.OpenAPI().Spec()

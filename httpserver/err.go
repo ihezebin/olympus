@@ -41,6 +41,29 @@ var code2MessageM = map[Code]string{
 	CodeValidateRuleFailed:  "Validate Rule Failed",
 }
 
+var code2StatusM = map[Code]int{
+	CodeOK:                  http.StatusOK,
+	CodeValidateRuleFailed:  http.StatusBadRequest,
+	CodeInternalServerError: http.StatusInternalServerError,
+	CodeBadRequest:          http.StatusBadRequest,
+	CodeUnauthorized:        http.StatusUnauthorized,
+	CodeNotFound:            http.StatusNotFound,
+	CodeForbidden:           http.StatusForbidden,
+	CodeTimeout:             http.StatusGatewayTimeout,
+	CodeCreated:             http.StatusCreated,
+	CodeAccepted:            http.StatusAccepted,
+	CodeNoContent:           http.StatusNoContent,
+	CodeResetContent:        http.StatusResetContent,
+	CodeAuthorizationFailed: http.StatusUnauthorized,
+}
+
+func statusOfCode(code Code) int {
+	if status, ok := code2StatusM[code]; ok {
+		return status
+	}
+	return http.StatusInternalServerError
+}
+
 type Err struct {
 	Status int
 	Code   Code
@@ -59,40 +82,35 @@ func (e *Err) WithStatus(status int) *Err {
 }
 
 func ErrorWithCode(code Code) *Err {
+	msg, ok := code2MessageM[code]
+	if !ok {
+		msg = code2MessageM[CodeInternalServerError]
+	}
 	return &Err{
-		Code: code,
-		Err:  errors.New(code2MessageM[code]),
+		Status: statusOfCode(code),
+		Code:   code,
+		Err:    errors.New(msg),
 	}
 }
 
 func NewError(code Code, msg string) *Err {
 	return &Err{
-		Code: code,
-		Err:  errors.New(msg),
+		Status: statusOfCode(code),
+		Code:   code,
+		Err:    errors.New(msg),
 	}
 }
 
 func ErrorWithBadRequest() *Err {
-	return &Err{
-		Status: http.StatusBadRequest,
-		Code:   CodeBadRequest,
-		Err:    errors.New(code2MessageM[CodeBadRequest]),
-	}
+	return ErrorWithCode(CodeBadRequest)
 }
+
 func ErrorWithInternalServer() *Err {
-	return &Err{
-		Status: http.StatusInternalServerError,
-		Code:   CodeInternalServerError,
-		Err:    errors.New(code2MessageM[CodeInternalServerError]),
-	}
+	return ErrorWithCode(CodeInternalServerError)
 }
 
 func ErrWithUnAuthorized() *Err {
-	return &Err{
-		Status: http.StatusUnauthorized,
-		Code:   CodeUnauthorized,
-		Err:    errors.New(code2MessageM[CodeUnauthorized]),
-	}
+	return ErrorWithCode(CodeUnauthorized)
 }
 
 func ErrorWithAuthorizationFailed(reason string) *Err {

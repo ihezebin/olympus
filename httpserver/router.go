@@ -41,22 +41,13 @@ func (r *openapiRouter) Kernel() gin.IRouter {
 }
 
 func (r *openapiRouter) Group(prefixes ...string) Router {
-	prefix := strings.Join(prefixes, "/")
+	ginPrefix := joinPathSegments(prefixes...)
 
 	return &openapiRouter{
-		prefix:    strings.ReplaceAll(strings.Join([]string{r.prefix, prefix}, "/"), "//", "/"),
-		ginRouter: r.ginRouter.Group(prefix),
+		prefix:    joinHTTPPaths(r.prefix, ginPrefix),
+		ginRouter: r.ginRouter.Group(ginPrefix),
 		openapi:   r.openapi,
 	}
-}
-
-func (r *openapiRouter) mergePath(paths ...string) string {
-	path := strings.ReplaceAll(strings.Join(paths, "/"), "//", "/")
-	if strings.Contains(path, "//") {
-		return r.mergePath(paths...)
-	}
-
-	return path
 }
 
 func (r *openapiRouter) Use(middleware ...gin.HandlerFunc) Router {
@@ -72,23 +63,31 @@ func (r *openapiRouter) handle(method string, path string, h handlerGenerator, r
 	ginFuncs = append(ginFuncs, handlerFunc)
 	ginFuncs = append(ginFuncs, routerOptions.PostMiddlewares...)
 
-	// register gin route
-	r.ginRouter.Handle(method, path, ginFuncs...)
-
-	// handle openapi path
-	path = r.mergePath(r.prefix, path)
-
-	// handle path register
-	if routerOptions.PathRegister != nil {
-		routerOptions.PathRegister(method, path)
+	// gin 相对路径：保留空字符串表示 group 根；非空则规范化（去多余斜杠、去尾斜杠）
+	ginPath := path
+	if path != "" && path != "/" {
+		ginPath = joinPathSegments(path)
+	} else if path == "/" {
+		ginPath = ""
 	}
 
-	// handle openapi route
-	route := r.openapi.Route(method, path)
+	// register gin route
+	r.ginRouter.Handle(method, ginPath, ginFuncs...)
+
+	// OpenAPI / PathRegister 使用规范化后的完整绝对路径（无尾斜杠）
+	fullPath := joinHTTPPaths(r.prefix, path)
+
+	if routerOptions.PathRegister != nil {
+		routerOptions.PathRegister(method, fullPath)
+	}
+
+	// OpenAPI 使用 {id} 风格 path
+	openapiPath := ginPathToOpenAPIPath(fullPath)
+	route := r.openapi.Route(method, openapiPath)
 	route = mergeOpenAPIOptions(route, routerOptions.OpenAPIOptions...)
-	operationID := strings.ReplaceAll(path, "/", "_")
-	operationID = strings.TrimLeft(operationID, "_")
-	operationID = strings.TrimRight(operationID, "_")
+	operationID := strings.ReplaceAll(strings.Trim(openapiPath, "/"), "/", "_")
+	operationID = strings.ReplaceAll(operationID, "{", "")
+	operationID = strings.ReplaceAll(operationID, "}", "")
 	operationID = method + "_" + operationID
 
 	route.HasOperationID(operationID)
@@ -108,24 +107,35 @@ func (r *openapiRouter) handle(method string, path string, h handlerGenerator, r
 		}
 	}
 
-	// path 里面有，但是由于 uri tag 添加的 param 要删除
+	// path 中真实存在的 :param / {param}，才注册到 OpenAPI
 	realExistParam := make(map[string]bool)
-	// path 里面包含 :id 格式的，添加 param
-	if strings.Contains(path, ":") {
-		for _, param := range strings.Split(path, "/") {
-			if strings.Contains(param, ":") {
-				realExistParam[param] = true
-				param = strings.TrimLeft(param, ":")
-				pathParam, ok := params[param]
-				if !ok {
-					pathParam = openapi.PathParam{
-						Description: "",
-						Type:        openapi.PrimitiveTypeString,
-					}
-				}
-				params[param] = pathParam
+	for _, segment := range strings.Split(fullPath, "/") {
+		var name string
+		switch {
+		case strings.HasPrefix(segment, ":"):
+			name = strings.TrimPrefix(segment, ":")
+		case strings.HasPrefix(segment, "*"):
+			name = strings.TrimPrefix(segment, "*")
+		case strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}"):
+			name = strings.TrimSuffix(strings.TrimPrefix(segment, "{"), "}")
+			if i := strings.IndexByte(name, ':'); i >= 0 { // {id:\d+}
+				name = name[:i]
+			}
+		default:
+			continue
+		}
+		if name == "" {
+			continue
+		}
+		realExistParam[name] = true
+		pathParam, ok := params[name]
+		if !ok {
+			pathParam = openapi.PathParam{
+				Description: "",
+				Type:        openapi.PrimitiveTypeString,
 			}
 		}
+		params[name] = pathParam
 	}
 
 	if len(params) > 0 {

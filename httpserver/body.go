@@ -20,6 +20,8 @@ func (b *Body[T]) WithErr(err *Err) *Body[T] {
 	b.Message = err.Error()
 	if err.Status != 0 {
 		b.status = err.Status
+	} else {
+		b.status = statusOfCode(err.Code)
 	}
 	return b
 }

@@ -30,6 +30,32 @@ func newErrHandlerFunc[RequestT any, ResponseT any](err error) gin.HandlerFunc {
 	}
 }
 
+// ensureRequestAllocated 保证 RequestT 为指针类型时内层已分配，避免空 body 跳过 JSON 绑定后
+// ShouldBindUri / ShouldBindHeader 对 nil 解引用 panic。
+func ensureRequestAllocated(requestPtr any) {
+	v := reflect.ValueOf(requestPtr)
+	if v.Kind() != reflect.Ptr {
+		return
+	}
+	v = v.Elem()
+	for v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		v = v.Elem()
+	}
+}
+
+// allowEmptyJSONBody 这些方法常无 body；Content-Type 为 JSON 时空 body 的 EOF 可忽略。
+func allowEmptyJSONBody(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodDelete:
+		return true
+	default:
+		return false
+	}
+}
+
 func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT], isRequestStruct bool) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
@@ -41,24 +67,24 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 			Code:   CodeOK,
 		}
 
-		// requestPtr := reflect.New(reflect.TypeOf((*RequestT)(nil)).Elem()).Interface()
 		requestPtr := new(RequestT)
-		if isRequestStruct { // 如果是结构体可自由绑定
+		if isRequestStruct {
+			ensureRequestAllocated(requestPtr)
 			if err = c.ShouldBind(requestPtr); err != nil {
 				// DELETE 等带 Content-Type: application/json 但无 body 时，Gin 选 JSON 绑定器，
-				// 空 body 解码会返回 EOF；此时忽略并继续 ShouldBindUri / ShouldBindHeader。
-				if !errors.Is(err, io.EOF) {
+				// 空 body 解码会返回 EOF；对通常无 body 的方法忽略并继续 URI/Header 绑定。
+				if !(errors.Is(err, io.EOF) && allowEmptyJSONBody(c.Request.Method)) {
 					logger.WithError(err).Errorf(ctx, "failed to bind, uri: %s", c.Request.RequestURI)
-					body = body.WithErr(ErrorWithInternalServer())
+					body = body.WithErr(ErrorWithBadRequest())
 					c.PureJSON(body.status, body)
 					return
 				}
 			}
-		} else { // 如果是 map 则优先从 body 读, 如果 body 为空则从 query 读
+		} else { // map：优先 body，空则从 query 读
 			if err = c.ShouldBindWith(requestPtr, mapBinding{}); err != nil {
 				logger.WithError(err).Errorf(ctx, "failed to bind, uri: %s", c.Request.RequestURI)
 				body = body.WithErr(ErrorWithBadRequest())
-				c.PureJSON(http.StatusBadRequest, body)
+				c.PureJSON(body.status, body)
 				return
 			}
 		}
@@ -67,7 +93,7 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 			if err = c.ShouldBindUri(requestPtr); err != nil {
 				logger.WithError(err).Errorf(ctx, "failed to bind uri, uri: %s, param: %+v", c.Request.RequestURI, c.Params)
 				body = body.WithErr(ErrorWithBadRequest())
-				c.PureJSON(http.StatusBadRequest, body)
+				c.PureJSON(body.status, body)
 				return
 			}
 		}
@@ -76,7 +102,7 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 			if err = c.ShouldBindHeader(requestPtr); err != nil {
 				logger.WithError(err).Errorf(ctx, "failed to bind header, uri: %s, header: %+v", c.Request.RequestURI, c.Request.Header)
 				body = body.WithErr(ErrorWithBadRequest())
-				c.PureJSON(http.StatusBadRequest, body)
+				c.PureJSON(body.status, body)
 				return
 			}
 		}
@@ -217,8 +243,6 @@ func NewHandler[RequestT any, ResponseT any](handler Handler[RequestT, ResponseT
 
 		if len(requestBodyStructFields) > 0 {
 			requestBodyType := reflect.StructOf(requestBodyStructFields)
-			a := requestBodyType.Kind()
-			_ = a
 			requestBodyModel = &openapi.Model{
 				Type: requestBodyType,
 			}

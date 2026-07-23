@@ -9,23 +9,23 @@ import (
 	"github.com/ihezebin/olympus/logger"
 )
 
+// codeInternalServerError 与 httpserver.CodeInternalServerError 保持一致（避免 middleware → httpserver 循环依赖）
+const codeInternalServerError = 2
+
 func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				ctx := c.Request.Context()
-				// Print error and stack information
 				logger.Errorf(ctx, "panic: %v", err)
 				logger.Errorf(ctx, "stack: %s", debug.Stack())
-				c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]interface{}{
-					"code":    10000,
+
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+					"code":    codeInternalServerError,
 					"message": "Internal Server Error",
-					"data":    nil,
-					"panic":   true,
 				})
 			}
 		}()
 		c.Next()
 	}
-
 }
