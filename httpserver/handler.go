@@ -115,6 +115,12 @@ func newGinHandlerFunc[RequestT any, ResponseT any](handler Handler[RequestT, Re
 
 		// handle error
 		if err != nil {
+			logger.WithError(err).WithFields(map[string]interface{}{
+				"method":   c.Request.Method,
+				"uri":      c.Request.RequestURI,
+				"request":  requestPtr,
+				"response": response,
+			}).Errorf(ctx, "handler error")
 			var errx *Err
 			if errors.As(err, &errx) {
 				body = body.WithErr(errx)
