@@ -73,3 +73,49 @@ func TestResponseBodyTruncationSuffix(t *testing.T) {
 		t.Fatalf("got %q, want %q", got, "hello")
 	}
 }
+
+func TestSkipRequestBodyRead(t *testing.T) {
+	cases := []struct {
+		ct   string
+		skip bool
+	}{
+		{"application/json", false},
+		{"text/plain", false},
+		{"multipart/form-data; boundary=----x", true},
+		{"multipart/mixed; boundary=----x", true},
+		{"application/octet-stream", true},
+		{"video/mp4", true},
+		{"audio/mpeg", true},
+		{"image/png", true},
+		{"VIDEO/MP4", true}, // ParseMediaType lowercases type
+	}
+	for _, tc := range cases {
+		if got := skipRequestBodyRead(tc.ct); got != tc.skip {
+			t.Fatalf("skipRequestBodyRead(%q)=%v, want %v", tc.ct, got, tc.skip)
+		}
+	}
+}
+
+func TestRequestBodySkipsMultipartWithoutConsuming(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	payload := []byte("fake-binary-payload")
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/upload", bytes.NewReader(payload))
+	c.Request.Header.Set("Content-Type", "multipart/form-data; boundary=----x")
+	c.Request.ContentLength = int64(len(payload))
+
+	got := requestBody(c)
+	want := "[skipped body, content-length=19]"
+	if got != want {
+		t.Fatalf("body=%q, want %q", got, want)
+	}
+
+	// body 未被消费，后续仍可读
+	data, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		t.Fatalf("read after skip: %v", err)
+	}
+	if !bytes.Equal(data, payload) {
+		t.Fatalf("body consumed unexpectedly: got %q", data)
+	}
+}

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -43,6 +45,11 @@ func requestBody(c *gin.Context) string {
 	if c.Request.Body == nil || c.Request.Body == http.NoBody {
 		return ""
 	}
+	// multipart / 音视频等大 body 不 ReadAll，只记 content-length，避免占内存、拖慢请求
+	if skipRequestBodyRead(c.Request.Header.Get("Content-Type")) {
+		return fmt.Sprintf("[skipped body, content-length=%d]", c.Request.ContentLength)
+	}
+
 	bodyData, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		return fmt.Sprintf("read request body err: %s", err.Error())
@@ -57,6 +64,20 @@ func requestBody(c *gin.Context) string {
 		bodySuffix = "..."
 	}
 	return string(bodyData[:bodySize]) + bodySuffix
+}
+
+func skipRequestBodyRead(contentType string) bool {
+	mediaType, _, _ := mime.ParseMediaType(contentType)
+	switch mediaType {
+	case "multipart/form-data", "multipart/mixed", "application/octet-stream":
+		return true
+	}
+	if strings.HasPrefix(mediaType, "audio/") ||
+		strings.HasPrefix(mediaType, "video/") ||
+		strings.HasPrefix(mediaType, "image/") {
+		return true
+	}
+	return false
 }
 
 func LoggingResponse() gin.HandlerFunc {
