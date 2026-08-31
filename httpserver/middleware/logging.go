@@ -91,13 +91,13 @@ func LoggingResponseWithoutHeader() gin.HandlerFunc {
 func generateLoggingResponse(header bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		rw := responseWriter{Body: new(bytes.Buffer), ResponseWriter: c.Writer}
+		rw := &responseWriter{Body: new(bytes.Buffer), ResponseWriter: c.Writer}
 		c.Writer = rw
 		c.Next()
 
 		fields := map[string]interface{}{
 			"status": fmt.Sprintf("%v %s", c.Writer.Status(), http.StatusText(c.Writer.Status())),
-			"body":   responseBody(&rw),
+			"body":   responseBody(rw),
 		}
 		if header {
 			fields["header"] = c.Writer.Header()
@@ -108,6 +108,11 @@ func generateLoggingResponse(header bool) gin.HandlerFunc {
 }
 
 func responseBody(rw *responseWriter) string {
+	// multipart / 音视频等媒体响应不记 body 内容，只记 content-length，与请求日志一致
+	if skipRequestBodyRead(rw.Header().Get("Content-Type")) {
+		return fmt.Sprintf("[skipped body, content-length=%d]", rw.written)
+	}
+
 	body := rw.Body.Bytes()
 	bodySize := len(body)
 	bodySuffix := ""
@@ -120,15 +125,48 @@ func responseBody(rw *responseWriter) string {
 
 type responseWriter struct {
 	gin.ResponseWriter
-	Body *bytes.Buffer
+	Body     *bytes.Buffer
+	written  int
+	skipBody bool
 }
 
-func (w responseWriter) Write(body []byte) (int, error) {
-	w.Body.Write(body)
-	return w.ResponseWriter.Write(body)
+func (w *responseWriter) Write(body []byte) (int, error) {
+	w.checkSkipBody()
+	n, err := w.ResponseWriter.Write(body)
+	if n > 0 {
+		w.written += n
+	}
+	// Write 后 Content-Type 可能被底层 sniff 填充，再检查一次
+	if !w.skipBody {
+		w.checkSkipBody()
+	}
+	if !w.skipBody && n > 0 {
+		w.Body.Write(body[:n])
+	}
+	return n, err
 }
 
-func (w responseWriter) WriteString(s string) (int, error) {
-	w.Body.WriteString(s)
-	return w.ResponseWriter.WriteString(s)
+func (w *responseWriter) WriteString(s string) (int, error) {
+	w.checkSkipBody()
+	n, err := w.ResponseWriter.WriteString(s)
+	if n > 0 {
+		w.written += n
+	}
+	if !w.skipBody {
+		w.checkSkipBody()
+	}
+	if !w.skipBody && n > 0 {
+		w.Body.WriteString(s[:n])
+	}
+	return n, err
+}
+
+func (w *responseWriter) checkSkipBody() {
+	if w.skipBody {
+		return
+	}
+	if skipRequestBodyRead(w.Header().Get("Content-Type")) {
+		w.skipBody = true
+		w.Body.Reset()
+	}
 }

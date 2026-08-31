@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -67,10 +68,38 @@ func TestRecoveryUsesFrameworkCode(t *testing.T) {
 }
 
 func TestResponseBodyTruncationSuffix(t *testing.T) {
-	rw := &responseWriter{Body: bytes.NewBufferString("hello")}
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	rw := &responseWriter{Body: bytes.NewBufferString("hello"), ResponseWriter: c.Writer}
 	got := responseBody(rw)
 	if got != "hello" {
 		t.Fatalf("got %q, want %q", got, "hello")
+	}
+}
+
+func TestResponseBodySkipsMedia(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	rw := &responseWriter{Body: new(bytes.Buffer), ResponseWriter: c.Writer}
+	c.Writer = rw
+	c.Header("Content-Type", "image/png")
+
+	payload := []byte("fake-png-binary-payload")
+	if _, err := rw.Write(payload); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	got := responseBody(rw)
+	want := fmt.Sprintf("[skipped body, content-length=%d]", len(payload))
+	if got != want {
+		t.Fatalf("body=%q, want %q", got, want)
+	}
+	if rw.Body.Len() != 0 {
+		t.Fatalf("media body should not be buffered, got len=%d", rw.Body.Len())
+	}
+	if !bytes.Equal(rec.Body.Bytes(), payload) {
+		t.Fatalf("response payload mismatch")
 	}
 }
 
